@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joia Gestão — Controle Interno para Joalherias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f3ee; --card:#fffdf9; --ink:#1d1b18; --ink2:#5a554c; --muted:#8c867a; --line:#e7e1d6;
+  --gold:#a8791f; --gold2:#c9a24a; --gold-soft:#f5ecd9; --side:#1f2a2e; --side2:#2b393e;
+  --ok:#1f7a4d; --ok-bg:#e3f3ea; --warn:#9a6400; --warn-bg:#fdf1d8; --bad:#b4342b; --bad-bg:#fbe6e3; --info:#2a5f9e; --info-bg:#e5eef9;
+  --r:12px; --sh:0 1px 2px rgba(30,25,15,.06),0 4px 14px rgba(30,25,15,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+button,input,select,textarea{font:inherit}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+aside{background:var(--side);color:#e9e4da;padding:18px 12px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;border-bottom:1px solid #34464c;margin-bottom:12px}
+.brand svg{flex:none}
+.brand b{font-family:"Cormorant Garamond",serif;font-size:24px;letter-spacing:.5px;color:#f1dfae}
+.brand small{display:block;font-size:11px;color:#9fb0b4;letter-spacing:.3px}
+nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:#cfd8da;text-decoration:none;margin-bottom:2px;font-size:13.5px}
+nav a:hover{background:var(--side2);color:#fff}
+nav a.active{background:linear-gradient(90deg,#a8791f33,transparent);color:#f1dfae;box-shadow:inset 3px 0 0 var(--gold2)}
+nav .sec{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:#71878c;margin:14px 10px 6px}
+nav .ic{width:18px;text-align:center;opacity:.9}
+.gold-box{margin:16px 6px 0;padding:12px;border-radius:10px;background:#16201f;border:1px solid #34464c;font-size:12px}
+.gold-box b{color:#f1dfae;font-size:16px}
+main{padding:22px 28px 60px;min-width:0}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+h1{font-family:"Cormorant Garamond",serif;font-size:32px;margin:0;font-weight:700}
+h1 + p{margin:2px 0 0;color:var(--ink2)}
+h2{font-size:16px;margin:0 0 12px}
+h3{font-size:14px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi .lbl{font-size:12px;color:var(--ink2);font-weight:500}
+.kpi .val{font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.3px}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;border-radius:9px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:#cfc5b2}
+.btn.pri{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.pri:hover{background:#946a19}
+.btn.sm{padding:5px 10px;font-size:12.5px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink2)}
+.btn.danger{color:var(--bad)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar .sp{flex:1}
+input.search,select.f{padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;min-width:200px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;background:#fbf8f2;position:sticky;top:0}
+tr:hover td{background:#fcf9f3}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-gold{background:var(--gold-soft);color:#7a5810}.t-mute{background:#eeeae2;color:#5a554c}
+.muted{color:var(--muted)} .small{font-size:12px}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);align-items:center}
+.list li:last-child{border:0}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(20,18,14,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow:auto}
+.ov.show{display:flex}
+.modal{background:var(--card);border-radius:14px;width:min(760px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal .mh{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+.modal .mh h2{margin:0;font-size:18px}
+.modal .mb{padding:18px 20px}
+.modal .mf{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.form .full{grid-column:1/-1}
+.form label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px}
+.form input,.form select,.form textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.form textarea{min-height:64px;resize:vertical}
+.form input:focus,.form select:focus,.form textarea:focus,input.search:focus{outline:2px solid var(--gold2);outline-offset:-1px}
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;overflow:auto}
+.col{background:#efeae1;border-radius:12px;padding:10px;min-height:200px}
+.col h3{display:flex;justify-content:space-between;font-size:13px;padding:2px 4px 8px}
+.os{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer}
+.os:hover{border-color:var(--gold2)}
+.os .n{font-size:11.5px;color:var(--muted)}
+.os .t{font-weight:600;margin:3px 0}
+/* pdv */
+.pdv{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+.prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;max-height:62vh;overflow:auto;padding:2px}
+.pc{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.pc:hover{border-color:var(--gold2);box-shadow:var(--sh)}
+.pc .gem{height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--gold-soft);margin-bottom:4px}
+.pc .nm{font-weight:600;font-size:13px;line-height:1.25}
+.pc .pr{font-weight:700;color:var(--gold)}
+.cart li{align-items:flex-start}
+.tot{font-size:22px;font-weight:700}
+.row{display:flex;gap:10px;align-items:center}
+.row > *{flex:1}
+.calc-out{font-size:28px;font-weight:700;color:var(--gold)}
+.breakdown td{padding:6px 4px;border-bottom:1px dashed var(--line)}
+.bm td,.bm th{font-size:13px}
+.yes{color:var(--ok);font-weight:700}.no{color:#c2b9a8}.part{color:var(--warn);font-weight:700}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--side);color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s;z-index:60}
+.toast.show{opacity:1;transform:none}
+.chart-box{position:relative;height:250px}
+.bar:hover path{fill:#946a19}
+.receipt{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:#fff;border:1px dashed #cdbf9f;padding:16px;border-radius:8px;white-space:pre-wrap}
+.menu-btn{display:none}
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.pdv{grid-template-columns:1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;left:-260px;width:250px;z-index:40;transition:.2s}
+  aside.open{left:0}
+  .menu-btn{display:inline-flex}
+  .g3,.g2{grid-template-columns:1fr}
+  main{padding:16px}
+  .form{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 14 14 6h12l6 8-12 20z" fill="#c9a24a"/><path d="M8 14h24L20 34z" fill="#a8791f"/><path d="M14 6l6 8 6-8M8 14h24M20 14v20" stroke="#f1dfae" stroke-width="1" fill="none"/></svg>
+      <div><b>Joia Gestão</b><small>Controle interno da joalheria</small></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="gold-box">
+      <div class="muted small">Cotação ouro 24k (R$/g)</div>
+      <b id="sideGold">—</b>
+      <div class="muted small" id="sideGoldDt"></div>
+      <button class="btn sm" style="margin-top:8px;width:100%;justify-content:center" onclick="editCotacao()">Atualizar cotação</button>
+    </div>
+  </aside>
+  <main>
+    <header class="top">
+      <div class="row" style="flex:0 1 auto;gap:12px">
+        <button class="btn menu-btn" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+        <div><h1 id="pgTitle"></h1><p id="pgSub"></p></div>
+      </div>
+      <div id="pgActions" class="row" style="flex:0 1 auto"></div>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
+
+<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true">
+  <div class="mh"><h2 id="mTitle"></h2><button class="btn ghost" onclick="closeModal()" aria-label="Fechar">✕</button></div>
+  <div class="mb" id="mBody"></div>
+  <div class="mf" id="mFoot"></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Joia Gestão — sistema de controle interno para joalherias
+   Single-page app, dados salvos no navegador (localStorage).
+   ============================================================ */
+const KEY = 'joia_gestao_v1';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num = (v,d=2) => (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const uid = () => Math.random().toString(36).slice(2,10);
+const iso = d => d.toISOString().slice(0,10);
+const today = () => iso(new Date());
+const addDays = (n, base=new Date()) => { const d=new Date(base); d.setDate(d.getDate()+n); return iso(d); };
+const fmtD = d => d ? d.slice(0,10).split('-').reverse().join('/') : '—';
+const monthKey = d => d.slice(0,7);
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+/* Teor (pureza) dos metais */
+const TEORES = {
+  'Ouro 24k (999)':0.999,'Ouro 22k (916)':0.916,'Ouro 18k (750)':0.75,'Ouro 14k (585)':0.585,'Ouro 10k (417)':0.417,
+  'Prata 950':0.95,'Prata 925':0.925,'Platina 950':0.95,'Aço / Outros':0
+};
+const CATEGORIAS = ['Anel','Aliança','Brinco','Colar','Corrente','Pingente','Pulseira','Relógio','Conjunto','Piercing','Outros'];
+const OS_STATUS = ['Recebido','Em produção','Pronto p/ retirada','Entregue'];
+const OS_TIPOS = ['Conserto','Sob encomenda','Ajuste de aro','Solda','Banho / Ródio','Gravação','Polimento / Limpeza','Troca de pedra','Relógio (bateria/revisão)'];
+const PAGTOS = ['PIX','Dinheiro','Cartão de débito','Cartão de crédito','Crediário','Troca de ouro'];
+
+/* ---------------- Persistência ---------------- */
+let db;
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+function load(){
+  try{ const s = localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){}
+  return seed();
+}
+function nextNum(prefix){ db.seq[prefix] = (db.seq[prefix]||0)+1; return prefix + String(db.seq[prefix]).padStart(4,'0'); }
+
+/* ---------------- Dados de demonstração ---------------- */
+function seed(){
+  const d = {
+    config:{ loja:'Joalheria Demonstração', cnpj:'00.000.000/0001-00', cotacaoOuro:640, cotacaoPrata:7.6, cotacaoData:today(), markup:2.6, maoObraG:45, comissaoPadrao:3 },
+    vendedores:[ {id:'v1',nome:'Ana Paula',comissao:3},{id:'v2',nome:'Ricardo',comissao:3},{id:'v3',nome:'Juliana',comissao:4} ],
+    ourives:['Seu Antônio (interno)','Oficina Ouro Fino (terceiro)'],
+    produtos:[], clientes:[], vendas:[], os:[], compras:[], consig:[], fin:[], movs:[], seq:{}
+  };
+  const P = (nome,cat,metal,peso,pedras,custo,preco,qtd,forn) => ({id:uid(),codigo:'',nome,categoria:cat,metal,peso,pedras,custo,preco,qtd,min:1,fornecedor:forn,local:'Vitrine',status:'Disponível',criado:addDays(-120)});
+  d.produtos = [
+    P('Anel Solitário 0,30ct','Anel','Ouro 18k (750)',2.8,'Diamante 0,30ct VS2/G',3900,8900,2,'Lapidação Brilhante Ltda'),
+    P('Aliança Tradicional 4mm (par)','Aliança','Ouro 18k (750)',8.2,'',5500,9800,4,'Alianças Real'),
+    P('Aliança Anatômica 6mm (par)','Aliança','Ouro 18k (750)',12.5,'',8200,14500,2,'Alianças Real'),
+    P('Brinco Ponto de Luz','Brinco','Ouro 18k (750)',1.1,'Zircônia 4mm',650,1490,6,'Grupo Aurum'),
+    P('Brinco Argola Média','Brinco','Ouro 18k (750)',3.4,'',2300,4600,3,'Grupo Aurum'),
+    P('Corrente Veneziana 50cm','Corrente','Ouro 18k (750)',5.6,'',3700,6900,3,'Correntes Brasil'),
+    P('Corrente Cartier 60cm','Corrente','Ouro 18k (750)',9.8,'',6400,11900,1,'Correntes Brasil'),
+    P('Pingente Coração Cravejado','Pingente','Ouro 18k (750)',1.6,'Diamantes 0,10ct total',1500,3500,2,'Lapidação Brilhante Ltda'),
+    P('Pulseira Riviera Zircônias','Pulseira','Prata 925',9.0,'Zircônias',180,590,5,'Prata Fina SP'),
+    P('Colar Gargantilha Pérola','Colar','Ouro 18k (750)',3.0,'Pérola cultivada 8mm',1800,3990,1,'Mar Pérolas'),
+    P('Anel Formatura Rubi','Anel','Ouro 18k (750)',6.0,'Rubi sintético',3600,7200,1,'Grupo Aurum'),
+    P('Brinco Argola Prata','Brinco','Prata 925',4.0,'',60,189,12,'Prata Fina SP'),
+    P('Anel Aparador Diamantes','Anel','Ouro 18k (750)',2.2,'Diamantes 0,08ct',1750,3900,0,'Lapidação Brilhante Ltda'),
+    P('Pingente Medalha N. Sra.','Pingente','Ouro 18k (750)',2.0,'',1350,2700,4,'Grupo Aurum'),
+    P('Relógio Feminino Dourado','Relógio','Aço / Outros',0,'',420,990,3,'Distribuidora Tempo'),
+    P('Conjunto Esmeralda (colar+brinco)','Conjunto','Ouro 18k (750)',5.4,'Esmeraldas naturais',5200,12500,1,'Gemas de Minas'),
+    P('Corrente Prata Grumet 70cm','Corrente','Prata 925',22,'',190,520,6,'Prata Fina SP'),
+    P('Piercing Ouro Zircônia','Piercing','Ouro 18k (750)',0.5,'Zircônia',190,450,8,'Grupo Aurum'),
+  ];
+  d.produtos.forEach((p,i)=>{ p.codigo = 'JG' + String(1001+i); });
+  d.produtos[12].min = 1; // estoque zerado -> alerta
+  const C = (nome,tel,nasc,esp,aro,pref) => ({id:uid(),nome,cpf:'',tel,email:'',nasc,dataEspecial:esp,aro,preferencias:pref,obs:'',criado:addDays(-200)});
+  const y = new Date().getFullYear(), m = String(new Date().getMonth()+1).padStart(2,'0');
+  d.clientes = [
+    C('Mariana Souza','(11) 98888-1111',`1990-${m}-22`,'Aniversário de casamento 12/06','14','Ouro amarelo, peças delicadas'),
+    C('Carlos Henrique Lima','(11) 97777-2222','1982-03-09','Noivado previsto para dez.','22','Relógios, correntes grossas'),
+    C('Fernanda Oliveira','(11) 96666-3333',`1978-${m}-05`,'','16','Pérolas e brilhantes'),
+    C('Roberto Almeida','(11) 95555-4444','1969-11-30','Bodas de prata 2027','24','Alianças, anéis masculinos'),
+    C('Patrícia Gomes','(11) 94444-5555','1995-07-14','','13','Prata, brincos'),
+    C('João Pedro Santos','(11) 93333-6666','2000-01-19','Formatura em 2026','20','Anel de formatura'),
+    C('Luciana Ribeiro','(11) 92222-7777','1987-05-02','','15','Esmeraldas, peças statement'),
+    C('Gustavo Martins','(11) 91111-8888','1992-09-27','Pedido de casamento','21','Solitários'),
+  ];
+  // vendas dos últimos 6 meses
+  const rnd = (a,b)=> a+Math.floor(Math.random()*(b-a+1));
+  for(let back=170; back>=0; back-=rnd(2,5)){
+    const p = d.produtos[rnd(0,d.produtos.length-1)];
+    const cli = d.clientes[rnd(0,d.clientes.length-1)];
+    const v = d.vendedores[rnd(0,2)];
+    const desconto = Math.random()<.3 ? Math.round(p.preco*0.05) : 0;
+    d.seq.V = (d.seq.V||0)+1;
+    const data = addDays(-back);
+    d.vendas.push({id:uid(),numero:'V'+String(d.seq.V).padStart(4,'0'),data,clienteId:cli.id,vendedorId:v.id,
+      itens:[{produtoId:p.id,nome:p.nome,codigo:p.codigo,qtd:1,preco:p.preco,custo:p.custo,categoria:p.categoria}],
+      desconto,total:p.preco-desconto,pagamento:PAGTOS[rnd(0,3)],parcelas:1});
+    d.fin.push({id:uid(),data,venc:data,tipo:'Entrada',categoria:'Venda',descricao:'Venda V'+String(d.seq.V).padStart(4,'0'),valor:p.preco-desconto,pago:true});
+  }
+  // ordens de serviço
+  const O = (cli,tipo,desc,peca,valor,sinal,prazo,status,dias) => { d.seq.OS=(d.seq.OS||0)+1; return {id:uid(),numero:'OS'+String(d.seq.OS).padStart(4,'0'),data:addDays(-dias),clienteId:cli.id,tipo,descricao:desc,peca,pesoEntrada:'',valor,sinal,prazo,status,ourives:d.ourives[0],obs:''}; };
+  d.os = [
+    O(d.clientes[0],'Ajuste de aro','Diminuir aro de 16 para 14','Anel ouro 18k com zircônia',120,0,addDays(2),'Em produção',3),
+    O(d.clientes[1],'Sob encomenda','Anel de noivado solitário 0,40ct, aro 15, ouro branco','Peça nova',9800,4900,addDays(18),'Em produção',6),
+    O(d.clientes[2],'Solda','Corrente veneziana partida','Corrente 45cm 18k',90,0,addDays(-1),'Recebido',5),
+    O(d.clientes[3],'Gravação','Gravar "Roberto & Sílvia 25 anos"','Par de alianças',150,150,addDays(1),'Pronto p/ retirada',4),
+    O(d.clientes[4],'Banho / Ródio','Banho de ródio em anel branco','Anel ouro branco',180,90,addDays(5),'Recebido',1),
+    O(d.clientes[6],'Troca de pedra','Substituir esmeralda lascada','Brinco esmeralda',650,300,addDays(10),'Recebido',2),
+    O(d.clientes[5],'Relógio (bateria/revisão)','Troca de bateria + vedação','Relógio masculino',80,80,addDays(-8),'Entregue',10),
+  ];
+  // compras de ouro
+  d.seq.CO = 2;
+  d.compras = [
+    {id:uid(),numero:'CO0001',data:addDays(-12),vendedorNome:'Cliente balcão — Maria José',cpf:'000.000.000-00',descricao:'Corrente partida + brinco sem par',peso:6.4,metal:'Ouro 18k (750)',cotacao:640,percentual:85,valor:Math.round(6.4*.75*640*.85),pagamento:'PIX',destino:'Fundição'},
+    {id:uid(),numero:'CO0002',data:addDays(-3),vendedorNome:'Fernanda Oliveira',cpf:'',descricao:'Anel antigo (abatido em compra)',peso:3.1,metal:'Ouro 18k (750)',cotacao:640,percentual:90,valor:Math.round(3.1*.75*640*.9),pagamento:'Troca de ouro',destino:'Reaproveitar na oficina'}
+  ];
+  // consignação
+  d.seq.CG = 1;
+  d.consig = [{id:uid(),numero:'CG0001',data:addDays(-4),destinatario:'Luciana Ribeiro',tipo:'Cliente (malinha)',itens:[{produtoId:d.produtos[15].id,nome:d.produtos[15].nome,preco:d.produtos[15].preco},{produtoId:d.produtos[9].id,nome:d.produtos[9].nome,preco:d.produtos[9].preco}],prazo:addDays(3),status:'Em aberto',obs:'Escolher para evento'}];
+  // financeiro: despesas e contas
+  const F = (dd,vv,tipo,cat,desc,valor,pago) => d.fin.push({id:uid(),data:addDays(dd),venc:addDays(vv),tipo,categoria:cat,descricao:desc,valor,pago});
+  for(let k=5;k>=0;k--){
+    F(-30*k-2,-30*k+3,'Saída','Aluguel','Aluguel da loja',6500,k>0);
+    F(-30*k-2,-30*k+8,'Saída','Folha de pagamento','Salários + encargos',14800,k>0);
+    F(-30*k-5,-30*k+10,'Saída','Fornecedores','Reposição de estoque',9000+rnd(0,6000),k>0);
+  }
+  F(-1,4,'Saída','Impostos','DAS Simples Nacional',4200,false);
+  F(-2,6,'Saída','Seguro','Seguro do estoque (parcela)',1150,false);
+  F(-3,12,'Entrada','Crediário','Parcela crediário — Carlos H.',980,false);
+  d.fin.push(...d.compras.map(c=>({id:uid(),data:c.data,venc:c.data,tipo:'Saída',categoria:'Compra de ouro',descricao:'Compra '+c.numero,valor:c.valor,pago:true})));
+  d.seq.V = d.seq.V; d.seq.OS = d.os.length;
+  return d;
+}
+
+/* ---------------- UI helpers ---------------- */
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2400); }
+function openModal(title, body, foot){ $('#mTitle').textContent=title; $('#mBody').innerHTML=body; $('#mFoot').innerHTML=foot||''; $('#ov').classList.add('show'); }
+function closeModal(){ $('#ov').classList.remove('show'); }
+$('#ov').addEventListener('click', e=>{ if(e.target.id==='ov') closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+/* Confirmação embutida (alert/confirm não funcionam em alguns ambientes) */
+function ask(msg, onYes){
+  openModal('Confirmar', `<p>${esc(msg)}</p>`, `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="askYes">Confirmar</button>`);
+  $('#askYes').onclick = ()=>{ closeModal(); onYes(); };
+}
+
+/* Formulário genérico */
+function field(f, v){
+  const id = 'f_'+f.k, cls = f.full?'full':'';
+  const val = v ?? f.def ?? '';
+  let inp;
+  if(f.type==='select') inp = `<select id="${id}">${f.options.map(o=>{const ov=typeof o==='object'?o.v:o, ol=typeof o==='object'?o.l:o; return `<option value="${esc(ov)}" ${String(ov)===String(val)?'selected':''}>${esc(ol)}</option>`}).join('')}</select>`;
+  else if(f.type==='textarea') inp = `<textarea id="${id}">${esc(val)}</textarea>`;
+  else if(f.type==='checkbox') inp = `<input type="checkbox" id="${id}" ${val?'checked':''} style="width:auto">`;
+  else inp = `<input id="${id}" type="${f.type||'text'}" ${f.step?`step="${f.step}"`:''} value="${esc(val)}" ${f.req?'required':''} placeholder="${esc(f.ph||'')}">`;
+  return `<div class="${cls}"><label for="${id}">${esc(f.label)}${f.req?' *':''}</label>${inp}</div>`;
+}
+function openForm(title, fields, obj, onSave, extraFoot=''){
+  openModal(title, `<form class="form" id="frm" onsubmit="return false">${fields.map(f=>field(f,obj?.[f.k])).join('')}</form>`,
+    `${extraFoot}<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="frmSave">Salvar</button>`);
+  $('#frmSave').onclick = ()=>{
+    const out = {};
+    for(const f of fields){
+      const el = $('#f_'+f.k);
+      let v = f.type==='checkbox' ? el.checked : el.value.trim();
+      if(f.type==='number') v = v===''? '' : Number(v);
+      if(f.req && (v===''||v==null)){ el.focus(); toast('Preencha: '+f.label); return; }
+      out[f.k]=v;
+    }
+    onSave(out); save(); closeModal(); render();
+  };
+}
+
+const cliName = id => db.clientes.find(c=>c.id===id)?.nome || 'Consumidor final';
+const vendName = id => db.vendedores.find(v=>v.id===id)?.nome || '—';
+const prodById = id => db.produtos.find(p=>p.id===id);
+const cliOpts = () => [{v:'',l:'— Consumidor final —'}, ...db.clientes.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(c=>({v:c.id,l:c.nome}))];
+const metalGramValue = (metal, peso) => (TEORES[metal]||0) * (metal.startsWith('Prata') ? db.config.cotacaoPrata/0.999 : metal.startsWith('Ouro') ? db.config.cotacaoOuro : 0) * (Number(peso)||0);
+
+function table(cols, rows, empty='Nenhum registro.'){
+  if(!rows.length) return `<div class="tbl-wrap"><div class="empty">${empty}</div></div>`;
+  return `<div class="tbl-wrap"><table><thead><tr>${cols.map(c=>`<th class="${c.num?'num':''}">${c.h}</th>`).join('')}</tr></thead><tbody>${
+    rows.map(r=>`<tr>${cols.map(c=>`<td class="${c.num?'num':''}">${c.f(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ---------------- Navegação ---------------- */
+const PAGES = [
+  {sec:'Visão geral'},
+  {id:'painel',ic:'◈',t:'Painel',s:'Resumo do dia e do mês da sua joalheria'},
+  {sec:'Operação'},
+  {id:'pdv',ic:'🛒',t:'Ponto de Venda',s:'Venda rápida com desconto, parcelamento, comissão e recibo'},
+  {id:'estoque',ic:'💎',t:'Estoque de Peças',s:'Cadastro por código, metal, teor, peso, pedras, custo e preço'},
+  {id:'os',ic:'🛠',t:'Ordens de Serviço',s:'Consertos, encomendas, ajustes e gravações — do balcão à entrega'},
+  {id:'ouro',ic:'⚖',t:'Compra de Ouro',s:'Compra de ouro usado com cálculo por peso × teor × cotação'},
+  {id:'consig',ic:'👜',t:'Consignação / Malinha',s:'Peças que saíram da loja para clientes ou representantes'},
+  {sec:'Relacionamento'},
+  {id:'clientes',ic:'👤',t:'Clientes (CRM)',s:'Histórico, aro, datas especiais e preferências de cada cliente'},
+  {sec:'Gestão'},
+  {id:'financeiro',ic:'💰',t:'Financeiro',s:'Fluxo de caixa, contas a pagar e a receber'},
+  {id:'calc',ic:'🧮',t:'Calculadora de Preço',s:'Formação de preço: metal + mão de obra + pedras × markup'},
+  {id:'relatorios',ic:'📊',t:'Relatórios',s:'Margem, giro, ranking de vendedores e de produtos'},
+  {sec:'Sistema'},
+  {id:'benchmark',ic:'🏆',t:'Benchmark',s:'Comparação com os principais sistemas do mercado'},
+  {id:'config',ic:'⚙',t:'Configurações',s:'Dados da loja, cotações, vendedores e backup'},
+];
+let page = 'painel';
+function go(id){ location.hash = id; }
+function route(){
+  const h = location.hash.slice(1);
+  page = PAGES.find(p=>p.id===h) ? h : 'painel';
+  render();
+  $('#side').classList.remove('open');
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', route);
+
+let charts = [];
+const kfmt = v => 'R$ '+(v>=1000? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:0})+'k' : Math.round(v));
+function niceMax(m){ if(m<=0) return 1; const p=Math.pow(10,Math.floor(Math.log10(m))); const n=m/p; return (n<=1?1:n<=2?2:n<=5?5:10)*p; }
+/* Gráfico de barras em SVG puro (sem dependências), com tooltip ao passar o mouse */
+function barChart(labels, vals, horiz){
+  const W=560, H=250, max=niceMax(Math.max(...vals,0)), ticks=[0,.25,.5,.75,1].map(t=>t*max);
+  const col='#b8892b', ink='#5a554c', grid='#eee8dc';
+  let g='';
+  if(!horiz){
+    const L=52,R=8,T=10,B=26, pw=W-L-R, ph=H-T-B, bw=Math.min(42,pw/labels.length*.6);
+    ticks.forEach(t=>{const y=T+ph-(t/max)*ph; g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="${grid}"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="${ink}">${kfmt(t)}</text>`;});
+    labels.forEach((l,i)=>{const cx=L+pw*(i+.5)/labels.length, h=(vals[i]/max)*ph, y=T+ph-h;
+      g+=`<g class="bar"><rect x="${cx-pw/labels.length/2}" y="${T}" width="${pw/labels.length}" height="${ph}" fill="transparent"/><path d="M${cx-bw/2},${T+ph} V${y+Math.min(4,h)} q0,-4 4,-4 H${cx+bw/2-4} q4,0 4,4 V${T+ph}Z" fill="${col}"/><text x="${cx}" y="${H-8}" text-anchor="middle" font-size="11" fill="${ink}">${esc(l)}</text><title>${esc(l)}: ${brl(vals[i])}</title></g>`;});
+  } else {
+    const L=96,R=14,T=4,B=22, pw=W-L-R, ph=H-T-B, rh=ph/Math.max(labels.length,1), bh=Math.min(20,rh*.7);
+    ticks.forEach(t=>{const x=L+(t/max)*pw; g+=`<line x1="${x}" x2="${x}" y1="${T}" y2="${T+ph}" stroke="${grid}"/><text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="${ink}">${kfmt(t)}</text>`;});
+    labels.forEach((l,i)=>{const cy=T+rh*(i+.5), w=(vals[i]/max)*pw;
+      g+=`<g class="bar"><rect x="0" y="${cy-rh/2}" width="${W}" height="${rh}" fill="transparent"/><path d="M${L},${cy-bh/2} H${L+Math.max(w-4,0)} q4,0 4,4 V${cy+bh/2-4} q0,4 -4,4 H${L}Z" fill="${col}"/><text x="${L-8}" y="${cy+4}" text-anchor="end" font-size="11.5" fill="${ink}">${esc(l)}</text><title>${esc(l)}: ${brl(vals[i])}</title></g>`;});
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Gráfico de barras" style="font-family:Inter,sans-serif">${g}</svg>`;
+}
+function render(){
+  const p = PAGES.find(x=>x.id===page);
+  $('#nav').innerHTML = PAGES.map(x=> x.sec ? `<div class="sec">${x.sec}</div>` : `<a href="#${x.id}" class="${x.id===page?'active':''}"><span class="ic">${x.ic}</span>${x.t}</a>`).join('');
+  $('#pgTitle').textContent = p.t; $('#pgSub').textContent = p.s; $('#pgActions').innerHTML='';
+  $('#sideGold').textContent = brl(db.config.cotacaoOuro);
+  $('#sideGoldDt').textContent = 'Atualizada em '+fmtD(db.config.cotacaoData)+' · 18k: '+brl(db.config.cotacaoOuro*0.75)+'/g';
+  VIEWS[page]();
+}
+function actions(html){ $('#pgActions').innerHTML = html; }
+
+/* ================= VIEWS ================= */
+const VIEWS = {};
+
+/* ---------- Painel ---------- */
+VIEWS.painel = () => {
+  const now = new Date(), mk = iso(now).slice(0,7);
+  const prevD = new Date(now.getFullYear(), now.getMonth()-1, 1), pmk = iso(prevD).slice(0,7);
+  const vm = db.vendas.filter(v=>monthKey(v.data)===mk), vp = db.vendas.filter(v=>monthKey(v.data)===pmk);
+  const fat = vm.reduce((s,v)=>s+v.total,0), fatP = vp.reduce((s,v)=>s+v.total,0);
+  const custoM = vm.reduce((s,v)=>s+v.itens.reduce((a,i)=>a+(i.custo||0)*i.qtd,0),0);
+  const margem = fat ? (fat-custoM)/fat*100 : 0;
+  const hoje = db.vendas.filter(v=>v.data===today()).reduce((s,v)=>s+v.total,0);
+  const estVal = db.produtos.reduce((s,p)=>s+p.preco*p.qtd,0), estCusto = db.produtos.reduce((s,p)=>s+p.custo*p.qtd,0);
+  const estPecas = db.produtos.reduce((s,p)=>s+Number(p.qtd),0);
+  const osAbertas = db.os.filter(o=>o.status!=='Entregue');
+  const osAtras = osAbertas.filter(o=>o.prazo<today() && o.status!=='Pronto p/ retirada');
+  const pagar7 = db.fin.filter(f=>f.tipo==='Saída' && !f.pago && f.venc<=addDays(7));
+  const receber = db.fin.filter(f=>f.tipo==='Entrada' && !f.pago);
+  const baixo = db.produtos.filter(p=>Number(p.qtd)<=Number(p.min||0));
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const aniv = db.clientes.filter(c=>c.nasc && c.nasc.slice(5,7)===mm);
+  const consigAb = db.consig.filter(c=>c.status==='Em aberto');
+  const delta = fatP ? ((fat-fatP)/fatP*100) : 0;
+
+  actions(`<button class="btn pri" onclick="go('pdv')">+ Nova venda</button><button class="btn" onclick="novaOS()">+ Nova OS</button>`);
+  $('#view').innerHTML = `
+  <div class="grid g4">
+    <div class="card kpi"><div class="lbl">Faturamento do mês</div><div class="val">${brl(fat)}</div><div class="sub">${vm.length} vendas · ${delta>=0?'▲':'▼'} ${num(Math.abs(delta),1)}% vs. mês anterior</div></div>
+    <div class="card kpi"><div class="lbl">Margem bruta do mês</div><div class="val">${num(margem,1)}%</div><div class="sub">Ticket médio ${brl(vm.length?fat/vm.length:0)}</div></div>
+    <div class="card kpi"><div class="lbl">Estoque (preço de venda)</div><div class="val">${brl(estVal)}</div><div class="sub">${estPecas} peças · custo ${brl(estCusto)}</div></div>
+    <div class="card kpi"><div class="lbl">Vendas hoje</div><div class="val">${brl(hoje)}</div><div class="sub">${osAbertas.length} OS em aberto · ${osAtras.length} atrasada(s)</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h2>Faturamento — últimos 6 meses</h2><div class="chart-box"><div id="chM"></div></div></div>
+    <div class="card"><h2>Vendas por categoria — últimos 6 meses</h2><div class="chart-box"><div id="chC"></div></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h2>⚠ Alertas</h2><ul class="list">
+      ${osAtras.map(o=>`<li><span>OS ${o.numero} atrasada — ${esc(cliName(o.clienteId))}</span><span class="tag t-bad">venceu ${fmtD(o.prazo)}</span></li>`).join('')}
+      ${baixo.map(p=>`<li><span>${esc(p.nome)}</span><span class="tag ${p.qtd<=0?'t-bad':'t-warn'}">${p.qtd<=0?'sem estoque':'estoque baixo'}</span></li>`).join('')}
+      ${pagar7.map(f=>`<li><span>${esc(f.descricao)}</span><span class="tag t-warn">${brl(f.valor)} · ${fmtD(f.venc)}</span></li>`).join('')}
+      ${consigAb.filter(c=>c.prazo<=addDays(3)).map(c=>`<li><span>Consignação ${c.numero} — ${esc(c.destinatario)}</span><span class="tag t-info">retorno ${fmtD(c.prazo)}</span></li>`).join('')}
+      ${(!osAtras.length&&!baixo.length&&!pagar7.length)?'<li class="muted">Tudo em dia ✨</li>':''}
+    </ul></div>
+    <div class="card"><h2>🛠 Prontas para retirada</h2><ul class="list">
+      ${db.os.filter(o=>o.status==='Pronto p/ retirada').map(o=>`<li><span><b>${o.numero}</b> ${esc(cliName(o.clienteId))}<br><span class="small muted">${esc(o.tipo)} · saldo ${brl(o.valor-o.sinal)}</span></span><button class="btn sm" onclick="osEntregar('${o.id}')">Entregar</button></li>`).join('') || '<li class="muted">Nenhuma peça aguardando</li>'}
+    </ul>
+    <h2 style="margin-top:14px">💸 A receber</h2><ul class="list">${receber.map(f=>`<li><span>${esc(f.descricao)}</span><b>${brl(f.valor)}</b></li>`).join('')||'<li class="muted">Nada pendente</li>'}</ul></div>
+    <div class="card"><h2>🎂 Aniversariantes do mês</h2><ul class="list">
+      ${aniv.map(c=>`<li><span>${esc(c.nome)}<br><span class="small muted">${fmtD(c.nasc).slice(0,5)} · ${esc(c.tel)}</span></span><span class="tag t-gold">aro ${esc(c.aro||'?')}</span></li>`).join('') || '<li class="muted">Nenhum este mês</li>'}
+    </ul><p class="small muted" style="margin-top:10px">Dica: ofereça um mimo ou condição especial — é a ação de CRM de maior retorno em joalherias.</p></div>
+  </div>`;
+
+  // gráficos
+  const labels=[], vals=[];
+  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); const k=iso(d).slice(0,7); labels.push(MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2)); vals.push(db.vendas.filter(v=>monthKey(v.data)===k).reduce((s,v)=>s+v.total,0)); }
+  const cat={}; const lim = addDays(-182);
+  db.vendas.filter(v=>v.data>=lim).forEach(v=>v.itens.forEach(i=>{ cat[i.categoria]=(cat[i.categoria]||0)+i.preco*i.qtd; }));
+  const ce = Object.entries(cat).sort((a,b)=>b[1]-a[1]);
+  $('#chM').innerHTML = barChart(labels, vals, false);
+  $('#chC').innerHTML = barChart(ce.map(e=>e[0]), ce.map(e=>e[1]), true);
+};
+
+/* ---------- PDV ---------- */
+let cart = [], pdvQ = '';
+VIEWS.pdv = () => {
+  actions(`<button class="btn" onclick="go('estoque')">Ver estoque</button>`);
+  const disp = db.produtos.filter(p=>p.qtd>0 && p.status!=='Consignado' && (!pdvQ || (p.nome+p.codigo+p.categoria).toLowerCase().includes(pdvQ.toLowerCase())));
+  $('#view').innerHTML = `<div class="pdv">
+    <div class="card">
+      <div class="toolbar"><input class="search" id="pdvQ" placeholder="Buscar por código, nome ou categoria… (leitor de código de barras funciona aqui)" value="${esc(pdvQ)}" style="flex:1"></div>
+      <div class="prods">${disp.map(p=>`<div class="pc" onclick="addCart('${p.id}')">
+        <div class="gem">${gemIcon(p)}</div>
+        <span class="small muted">${p.codigo} · ${esc(p.categoria)}</span>
+        <span class="nm">${esc(p.nome)}</span>
+        <span class="small muted">${esc(p.metal)}${p.peso?` · ${num(p.peso,1)}g`:''}</span>
+        <span class="pr">${brl(p.preco)}</span>
+        <span class="small muted">${p.qtd} em estoque</span></div>`).join('') || '<div class="empty">Nenhuma peça encontrada.</div>'}</div>
+    </div>
+    <div class="card" id="cartBox"></div>
+  </div>`;
+  const q = $('#pdvQ');
+  q.oninput = e=>{ pdvQ=e.target.value; const pos=e.target.selectionStart; VIEWS.pdv(); const n=$('#pdvQ'); n.focus(); n.setSelectionRange(pos,pos); };
+  q.onkeydown = e=>{ if(e.key==='Enter'){ const p=db.produtos.find(x=>x.codigo.toLowerCase()===pdvQ.toLowerCase()); if(p){addCart(p.id); pdvQ=''; VIEWS.pdv(); $('#pdvQ').focus();} } };
+  renderCart();
+};
+function gemIcon(p){
+  const c = p.metal.startsWith('Prata') ? '#9aa3a8' : p.metal.startsWith('Ouro') ? '#c9a24a' : '#6b7a80';
+  return `<svg width="30" height="30" viewBox="0 0 40 40"><path d="M8 14 14 6h12l6 8-12 20z" fill="${c}"/><path d="M8 14h24L20 34z" fill="${c}" opacity=".75"/></svg>`;
+}
+function addCart(id){
+  const p = prodById(id); const it = cart.find(i=>i.produtoId===id);
+  if(it){ if(it.qtd>=p.qtd) return toast('Quantidade máxima em estoque'); it.qtd++; }
+  else cart.push({produtoId:id,nome:p.nome,codigo:p.codigo,qtd:1,preco:p.preco,custo:p.custo,categoria:p.categoria});
+  renderCart();
+}
+let cartState = {cliente:'',vendedor:'v1',desconto:0,descTipo:'%',pagamento:'PIX',parcelas:1,troca:0};
+function renderCart(){
+  const box = $('#cartBox'); if(!box) return;
+  const sub = cart.reduce((s,i)=>s+i.preco*i.qtd,0);
+  const desc = cartState.descTipo==='%' ? sub*(Number(cartState.desconto)||0)/100 : Number(cartState.desconto)||0;
+  const troca = Number(cartState.troca)||0;
+  const total = Math.max(0, sub-desc-troca);
+  const vend = db.vendedores.find(v=>v.id===cartState.vendedor);
+  box.innerHTML = `<h2>Venda atual</h2>
+    <ul class="list cart">${cart.map((i,k)=>`<li><span><b>${esc(i.nome)}</b><br><span class="small muted">${i.codigo} · ${brl(i.preco)}</span></span>
+      <span class="row" style="flex:0 0 auto;gap:4px"><button class="btn sm" onclick="cartQty(${k},-1)">−</button><b>${i.qtd}</b><button class="btn sm" onclick="cartQty(${k},1)">+</button></span></li>`).join('') || '<li class="muted">Clique nas peças para adicionar</li>'}</ul>
+    <div class="form" style="margin-top:12px">
+      <div class="full"><label>Cliente</label><select id="cCli">${cliOpts().map(o=>`<option value="${o.v}" ${o.v===cartState.cliente?'selected':''}>${esc(o.l)}</option>`).join('')}</select></div>
+      <div><label>Vendedor(a)</label><select id="cVend">${db.vendedores.map(v=>`<option value="${v.id}" ${v.id===cartState.vendedor?'selected':''}>${esc(v.nome)}</option>`).join('')}</select></div>
+      <div><label>Pagamento</label><select id="cPag">${PAGTOS.map(p=>`<option ${p===cartState.pagamento?'selected':''}>${p}</option>`).join('')}</select></div>
+      <div><label>Desconto</label><div class="row"><input id="cDesc" type="number" min="0" value="${cartState.desconto}"><select id="cDescT" style="flex:0 0 70px"><option ${cartState.descTipo==='%'?'selected':''}>%</option><option ${cartState.descTipo==='R$'?'selected':''}>R$</option></select></div></div>
+      <div><label>Parcelas</label><select id="cParc">${[1,2,3,4,5,6,8,10,12].map(n=>`<option ${n==cartState.parcelas?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="full"><label>Abater ouro do cliente (R$) <span class="muted">— use a aba Compra de Ouro para calcular</span></label><input id="cTroca" type="number" min="0" value="${cartState.troca}"></div>
+    </div>
+    <table class="breakdown" style="margin-top:14px">
+      <tr><td>Subtotal</td><td class="num">${brl(sub)}</td></tr>
+      <tr><td>Desconto</td><td class="num">− ${brl(desc)}</td></tr>
+      ${troca?`<tr><td>Ouro recebido</td><td class="num">− ${brl(troca)}</td></tr>`:''}
+      <tr><td><b>Total</b></td><td class="num tot">${brl(total)}</td></tr>
+      ${cartState.parcelas>1?`<tr><td class="muted">${cartState.parcelas}× de</td><td class="num muted">${brl(total/cartState.parcelas)}</td></tr>`:''}
+      <tr><td class="muted small">Comissão ${esc(vend?.nome||'')} (${vend?.comissao||0}%)</td><td class="num muted small">${brl(total*(vend?.comissao||0)/100)}</td></tr>
+    </table>
+    <div class="row" style="margin-top:14px"><button class="btn" onclick="cart=[];renderCart()">Limpar</button><button class="btn pri" style="justify-content:center" ${cart.length?'':'disabled'} onclick="finalizarVenda()">Finalizar venda</button></div>`;
+  const bind=(id,k)=>{ $(id).onchange=e=>{cartState[k]=e.target.value; renderCart();}; };
+  bind('#cCli','cliente'); bind('#cVend','vendedor'); bind('#cPag','pagamento'); bind('#cDesc','desconto'); bind('#cDescT','descTipo'); bind('#cParc','parcelas'); bind('#cTroca','troca');
+}
+function cartQty(k,d){ const i=cart[k]; const p=prodById(i.produtoId); i.qtd+=d; if(i.qtd>p.qtd){i.qtd=p.qtd;toast('Sem mais unidades');} if(i.qtd<=0) cart.splice(k,1); renderCart(); }
+function finalizarVenda(){
+  const sub = cart.reduce((s,i)=>s+i.preco*i.qtd,0);
+  const desc = cartState.descTipo==='%' ? sub*(Number(cartState.desconto)||0)/100 : Number(cartState.desconto)||0;
+  const troca = Number(cartState.troca)||0;
+  const total = Math.max(0, sub-desc-troca);
+  const v = {id:uid(),numero:nextNum('V'),data:today(),clienteId:cartState.cliente,vendedorId:cartState.vendedor,itens:cart.map(i=>({...i})),desconto:desc+troca,total,pagamento:cartState.pagamento,parcelas:Number(cartState.parcelas)};
+  db.vendas.push(v);
+  v.itens.forEach(i=>{ const p=prodById(i.produtoId); p.qtd-=i.qtd; db.movs.push({id:uid(),data:today(),produtoId:p.id,tipo:'Saída (venda)',qtd:-i.qtd,ref:v.numero}); });
+  if(cartState.pagamento==='Crediário' && v.parcelas>1){
+    for(let k=1;k<=v.parcelas;k++) db.fin.push({id:uid(),data:today(),venc:addDays(30*k),tipo:'Entrada',categoria:'Crediário',descricao:`${v.numero} parc. ${k}/${v.parcelas} — ${cliName(v.clienteId)}`,valor:total/v.parcelas,pago:false});
+  } else db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Entrada',categoria:'Venda',descricao:'Venda '+v.numero,valor:total,pago:true});
+  save(); cart=[]; cartState={...cartState,cliente:'',desconto:0,troca:0,parcelas:1};
+  render(); recibo(v);
+}
+function recibo(v){
+  const L = (a,b)=> a.padEnd(28,' ').slice(0,28)+String(b).padStart(14,' ');
+  const txt = `${db.config.loja.toUpperCase()}\nCNPJ ${db.config.cnpj}\n${'-'.repeat(42)}\nVENDA ${v.numero}   ${fmtD(v.data)}\nCliente: ${cliName(v.clienteId)}\nVendedor(a): ${vendName(v.vendedorId)}\n${'-'.repeat(42)}\n${v.itens.map(i=>L(`${i.qtd}x ${i.nome}`, brl(i.preco*i.qtd))).join('\n')}\n${'-'.repeat(42)}\n${v.desconto?L('Descontos/abatimentos','- '+brl(v.desconto))+'\n':''}${L('TOTAL',brl(v.total))}\n${L('Pagamento',v.pagamento+(v.parcelas>1?` ${v.parcelas}x`:''))}\n${'-'.repeat(42)}\nGarantia: 1 ano contra defeitos de fabricação.\nCertificado de autenticidade do metal incluso.\nObrigado pela preferência!`;
+  openModal('Recibo '+v.numero, `<div class="receipt" id="rcpt">${esc(txt)}</div><p class="small muted">Documento não fiscal. A NF-e/NFC-e deve ser emitida pelo emissor fiscal integrado (ver Benchmark → próximos passos).</p>`,
+    `<button class="btn" onclick="copyText($('#rcpt').textContent)">Copiar</button><button class="btn pri" onclick="closeModal()">OK</button>`);
+}
+function copyText(t){ try{ navigator.clipboard.writeText(t).then(()=>toast('Copiado!'),()=>toast('Não foi possível copiar')); }catch(e){ toast('Não foi possível copiar'); } }
+
+/* ---------- Estoque ---------- */
+let estQ='', estCat='', estMetal='';
+const PROD_FIELDS = () => [
+  {k:'codigo',label:'Código / SKU',req:true,ph:'JG1050'},
+  {k:'nome',label:'Descrição da peça',req:true},
+  {k:'categoria',label:'Categoria',type:'select',options:CATEGORIAS},
+  {k:'metal',label:'Metal / teor',type:'select',options:Object.keys(TEORES)},
+  {k:'peso',label:'Peso (g)',type:'number',step:'0.01'},
+  {k:'pedras',label:'Pedras / gemas',ph:'Diamante 0,30ct VS2/G'},
+  {k:'custo',label:'Custo (R$)',type:'number',step:'0.01',req:true},
+  {k:'preco',label:'Preço de venda (R$)',type:'number',step:'0.01',req:true},
+  {k:'qtd',label:'Quantidade',type:'number',def:1},
+  {k:'min',label:'Estoque mínimo',type:'number',def:1},
+  {k:'fornecedor',label:'Fornecedor'},
+  {k:'local',label:'Localização',type:'select',options:['Vitrine','Cofre','Mostruário balcão','Oficina','Filial']},
+  {k:'status',label:'Situação',type:'select',options:['Disponível','Reservado','Consignado','Em conserto']},
+];
+VIEWS.estoque = () => {
+  actions(`<button class="btn" onclick="sugerirPreco()">🧮 Sugerir preço</button><button class="btn pri" onclick="editProd()">+ Nova peça</button>`);
+  let list = db.produtos.filter(p=>(!estQ||(p.nome+p.codigo+p.pedras+p.fornecedor).toLowerCase().includes(estQ.toLowerCase())) && (!estCat||p.categoria===estCat) && (!estMetal||p.metal===estMetal));
+  const totC = list.reduce((s,p)=>s+p.custo*p.qtd,0), totV = list.reduce((s,p)=>s+p.preco*p.qtd,0), totG = list.filter(p=>p.metal.startsWith('Ouro')).reduce((s,p)=>s+p.peso*p.qtd,0);
+  $('#view').innerHTML = `
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">Itens (filtro)</div><div class="val">${list.reduce((s,p)=>s+Number(p.qtd),0)}</div><div class="sub">${list.length} referências</div></div>
+    <div class="card kpi"><div class="lbl">Valor de custo</div><div class="val">${brl(totC)}</div></div>
+    <div class="card kpi"><div class="lbl">Valor de venda</div><div class="val">${brl(totV)}</div><div class="sub">Markup médio ${num(totC?totV/totC:0,2)}×</div></div>
+    <div class="card kpi"><div class="lbl">Ouro em estoque</div><div class="val">${num(totG,1)} g</div><div class="sub">Valor metal ≈ ${brl(list.reduce((s,p)=>s+metalGramValue(p.metal,p.peso)*p.qtd,0))}</div></div>
+  </div>
+  <div class="toolbar">
+    <input class="search" id="eq" placeholder="Buscar código, nome, pedra, fornecedor…" value="${esc(estQ)}">
+    <select class="f" id="ec"><option value="">Todas categorias</option>${CATEGORIAS.map(c=>`<option ${c===estCat?'selected':''}>${c}</option>`).join('')}</select>
+    <select class="f" id="em"><option value="">Todos metais</option>${Object.keys(TEORES).map(c=>`<option ${c===estMetal?'selected':''}>${c}</option>`).join('')}</select>
+  </div>
+  ${table([
+    {h:'Código',f:p=>`<b>${p.codigo}</b>`},
+    {h:'Peça',f:p=>`${esc(p.nome)}<br><span class="small muted">${esc(p.categoria)} · ${esc(p.pedras||'sem pedras')}</span>`},
+    {h:'Metal',f:p=>esc(p.metal)},
+    {h:'Peso',num:1,f:p=>p.peso?num(p.peso,2)+' g':'—'},
+    {h:'Custo',num:1,f:p=>brl(p.custo)},
+    {h:'Preço',num:1,f:p=>`<b>${brl(p.preco)}</b><br><span class="small muted">${num(p.custo?p.preco/p.custo:0,2)}×</span>`},
+    {h:'Qtd',num:1,f:p=>`<span class="tag ${p.qtd<=0?'t-bad':p.qtd<=p.min?'t-warn':'t-ok'}">${p.qtd}</span>`},
+    {h:'Local',f:p=>`${esc(p.local)}${p.status!=='Disponível'?`<br><span class="tag t-info">${esc(p.status)}</span>`:''}`},
+    {h:'',f:p=>`<button class="btn sm" onclick="editProd('${p.id}')">Editar</button> <button class="btn sm" onclick="movProd('${p.id}')">Mov.</button> <button class="btn sm" onclick="etiqueta('${p.id}')">Etiqueta</button>`},
+  ], list)}
+  <h2 style="margin-top:20px">Últimas movimentações</h2>
+  ${table([{h:'Data',f:m=>fmtD(m.data)},{h:'Peça',f:m=>esc(prodById(m.produtoId)?.nome||'—')},{h:'Tipo',f:m=>esc(m.tipo)},{h:'Qtd',num:1,f:m=>(m.qtd>0?'+':'')+m.qtd},{h:'Ref.',f:m=>esc(m.ref||'')}], db.movs.slice(-10).reverse(), 'Sem movimentações registradas ainda (vendas e entradas aparecem aqui).')}`;
+  $('#eq').oninput=e=>{estQ=e.target.value; const pos=e.target.selectionStart; VIEWS.estoque(); const n=$('#eq'); n.focus(); n.setSelectionRange(pos,pos);};
+  $('#ec').onchange=e=>{estCat=e.target.value; render();};
+  $('#em').onchange=e=>{estMetal=e.target.value; render();};
+};
+function editProd(id){
+  const p = id ? prodById(id) : {codigo:'JG'+(1001+db.produtos.length),metal:'Ouro 18k (750)',qtd:1,min:1,status:'Disponível',local:'Vitrine'};
+  openForm(id?'Editar peça':'Nova peça', PROD_FIELDS(), p, o=>{
+    if(id){ Object.assign(p,o); toast('Peça atualizada'); }
+    else { const np={id:uid(),criado:today(),...o}; db.produtos.push(np); db.movs.push({id:uid(),data:today(),produtoId:np.id,tipo:'Entrada (cadastro)',qtd:Number(o.qtd)||0,ref:o.fornecedor}); toast('Peça cadastrada'); }
+  }, id?`<button class="btn danger" style="margin-right:auto" onclick="ask('Excluir esta peça?',()=>{db.produtos=db.produtos.filter(x=>x.id!=='${id}');save();render();toast('Excluída')})">Excluir</button>`:'');
+}
+function movProd(id){
+  const p = prodById(id);
+  openForm('Movimentar estoque — '+p.nome, [
+    {k:'tipo',label:'Tipo',type:'select',options:['Entrada (compra)','Entrada (devolução)','Saída (perda/quebra)','Saída (enviado à oficina)','Ajuste de inventário']},
+    {k:'qtd',label:'Quantidade (+/−)',type:'number',req:true,def:1},
+    {k:'ref',label:'Referência / nota fiscal',full:true}
+  ], {}, o=>{
+    let q = Number(o.qtd); if(o.tipo.startsWith('Saída')) q = -Math.abs(q); else if(o.tipo.startsWith('Entrada')) q=Math.abs(q);
+    p.qtd = Number(p.qtd)+q; db.movs.push({id:uid(),data:today(),produtoId:id,tipo:o.tipo,qtd:q,ref:o.ref}); toast('Movimentação registrada');
+  });
+}
+function etiqueta(id){
+  const p = prodById(id);
+  let x=0; const svgBars = [...(p.codigo+'*')].map(c=>c.charCodeAt(0)).flatMap(n=>[n%3+1,(n>>2)%3+1,(n>>4)%2+1]).map((w,i)=>{const r=`<rect x="${x}" y="0" width="${w}" height="34" fill="${i%2?'#fff':'#111'}"/>`; x+=w; return r;}).join('');
+  openModal('Etiqueta de vitrine', `<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <div style="border:1px solid #ccc;border-radius:6px;padding:8px 10px;width:250px;font-size:11px;background:#fff">
+      <div style="font-weight:700">${esc(db.config.loja)}</div>
+      <div>${esc(p.nome)}</div><div class="muted">${esc(p.metal)} ${p.peso?'· '+num(p.peso,2)+'g':''}</div>
+      <svg width="${x}" height="34" style="margin:4px 0">${svgBars}</svg>
+      <div style="display:flex;justify-content:space-between"><b>${p.codigo}</b><b>${brl(p.preco)}</b></div>
+    </div>
+    <p class="small muted" style="flex:1;min-width:200px">Pré-visualização da etiqueta tipo "rabicho". Na versão em produção, é impressa em impressora térmica (Zebra/Argox/Elgin) com código de barras Code-128 lido pelo PDV.</p></div>`,
+    `<button class="btn pri" onclick="closeModal()">OK</button>`);
+}
+
+/* ---------- Ordens de serviço ---------- */
+const OS_FIELDS = () => [
+  {k:'clienteId',label:'Cliente',type:'select',options:cliOpts(),full:true},
+  {k:'tipo',label:'Tipo de serviço',type:'select',options:OS_TIPOS},
+  {k:'status',label:'Status',type:'select',options:OS_STATUS},
+  {k:'peca',label:'Peça recebida',ph:'Anel ouro 18k c/ zircônia',full:true},
+  {k:'pesoEntrada',label:'Peso na entrada (g)',type:'number',step:'0.01'},
+  {k:'ourives',label:'Ourives responsável',type:'select',options:db.ourives},
+  {k:'descricao',label:'O que fazer',type:'textarea',full:true,req:true},
+  {k:'valor',label:'Valor do serviço (R$)',type:'number',step:'0.01',def:0},
+  {k:'sinal',label:'Sinal pago (R$)',type:'number',step:'0.01',def:0},
+  {k:'prazo',label:'Prazo de entrega',type:'date',def:addDays(7)},
+  {k:'obs',label:'Observações (riscos, estado da peça)',type:'textarea',full:true},
+];
+function novaOS(id){
+  const o = id ? db.os.find(x=>x.id===id) : {status:'Recebido',prazo:addDays(7),data:today()};
+  openForm(id?`Ordem de serviço ${o.numero}`:'Nova ordem de serviço', OS_FIELDS(), o, v=>{
+    v.valor=Number(v.valor)||0; v.sinal=Number(v.sinal)||0;
+    if(id) Object.assign(o,v);
+    else { const n={id:uid(),numero:nextNum('OS'),data:today(),...v}; db.os.push(n); if(n.sinal>0) db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Entrada',categoria:'Serviços',descricao:`Sinal ${n.numero}`,valor:n.sinal,pago:true}); }
+    toast('Ordem de serviço salva');
+  }, id?`<button class="btn" style="margin-right:auto" onclick="osComprovante('${id}')">Comprovante</button>`:'');
+}
+function osComprovante(id){
+  const o = db.os.find(x=>x.id===id);
+  const txt = `${db.config.loja.toUpperCase()}\nORDEM DE SERVIÇO ${o.numero}\n${'-'.repeat(42)}\nEntrada: ${fmtD(o.data)}   Prazo: ${fmtD(o.prazo)}\nCliente: ${cliName(o.clienteId)}\nServiço: ${o.tipo}\nPeça: ${o.peca||''}${o.pesoEntrada?` (${num(o.pesoEntrada,2)} g)`:''}\nDescrição: ${o.descricao}\n${'-'.repeat(42)}\nValor: ${brl(o.valor)}   Sinal: ${brl(o.sinal)}\nSaldo na retirada: ${brl(o.valor-o.sinal)}\n${'-'.repeat(42)}\nApresente este comprovante na retirada.\nPeças não retiradas em 90 dias seguem\na política da loja.\n\nAssinatura cliente: ______________________`;
+  openModal('Comprovante '+o.numero, `<div class="receipt" id="rcpt">${esc(txt)}</div>`, `<button class="btn" onclick="copyText($('#rcpt').textContent)">Copiar</button><button class="btn pri" onclick="closeModal()">OK</button>`);
+}
+function osMove(id, dir){ const o=db.os.find(x=>x.id===id); const i=OS_STATUS.indexOf(o.status)+dir; if(i<0||i>=OS_STATUS.length) return; if(OS_STATUS[i]==='Entregue') return osEntregar(id); o.status=OS_STATUS[i]; save(); render(); }
+function osEntregar(id){
+  const o=db.os.find(x=>x.id===id); const saldo=o.valor-o.sinal;
+  ask(`Entregar ${o.numero} para ${cliName(o.clienteId)}? Receber saldo de ${brl(saldo)}.`, ()=>{
+    o.status='Entregue'; o.entregue=today();
+    if(saldo>0) db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Entrada',categoria:'Serviços',descricao:`Saldo ${o.numero}`,valor:saldo,pago:true});
+    save(); render(); toast('Entregue e recebido');
+  });
+}
+VIEWS.os = () => {
+  actions(`<button class="btn pri" onclick="novaOS()">+ Nova OS</button>`);
+  const cols = OS_STATUS.map(st=>{
+    const its = db.os.filter(o=>o.status===st).sort((a,b)=>a.prazo.localeCompare(b.prazo));
+    const shown = st==='Entregue' ? its.slice(-6) : its;
+    return `<div class="col"><h3><span>${st}</span><span class="tag t-mute">${its.length}</span></h3>${shown.map(o=>{
+      const late = o.prazo<today() && st!=='Entregue' && st!=='Pronto p/ retirada';
+      return `<div class="os" onclick="novaOS('${o.id}')">
+        <div class="n">${o.numero} · entrada ${fmtD(o.data)}</div>
+        <div class="t">${esc(cliName(o.clienteId))}</div>
+        <div class="small">${esc(o.tipo)} — ${esc(o.descricao).slice(0,60)}</div>
+        <div class="row small" style="margin-top:6px;justify-content:space-between"><span class="tag ${late?'t-bad':'t-gold'}" style="flex:0 0 auto">${late?'Atrasada ':'Prazo '}${fmtD(o.prazo)}</span><b style="flex:0 0 auto">${brl(o.valor)}</b></div>
+        ${st!=='Entregue'?`<div class="row" style="margin-top:8px;gap:6px" onclick="event.stopPropagation()">${st!=='Recebido'?`<button class="btn sm" onclick="osMove('${o.id}',-1)">◀</button>`:''}<button class="btn sm" onclick="osMove('${o.id}',1)">${st==='Pronto p/ retirada'?'Entregar ✓':'Avançar ▶'}</button></div>`:''}
+      </div>`;}).join('') || '<div class="small muted" style="padding:8px">Vazio</div>'}</div>`;
+  }).join('');
+  $('#view').innerHTML = `<div class="kanban">${cols}</div>
+  <p class="small muted" style="margin-top:12px">Clique no cartão para editar ou gerar o comprovante do cliente. Sinais e saldos entram automaticamente no financeiro.</p>`;
+};
+
+/* ---------- Compra de ouro ---------- */
+VIEWS.ouro = () => {
+  actions(`<button class="btn" onclick="editCotacao()">Atualizar cotação</button>`);
+  $('#view').innerHTML = `<div class="grid g2">
+    <div class="card"><h2>Calcular e registrar compra</h2>
+      <form class="form" onsubmit="return false">
+        <div class="full"><label>Vendedor (pessoa que traz o ouro) *</label><input id="oNome" placeholder="Nome completo"></div>
+        <div><label>CPF (obrigatório p/ registro)</label><input id="oCpf" placeholder="000.000.000-00"></div>
+        <div><label>Metal / teor</label><select id="oMetal">${Object.keys(TEORES).filter(k=>!k.startsWith('Aço')).map(k=>`<option ${k==='Ouro 18k (750)'?'selected':''}>${k}</option>`).join('')}</select></div>
+        <div><label>Peso bruto (g)</label><input id="oPeso" type="number" step="0.01" value="5"></div>
+        <div><label>Desconto de pedras/solda (g)</label><input id="oDesc" type="number" step="0.01" value="0"></div>
+        <div><label>Cotação 24k (R$/g)</label><input id="oCot" type="number" step="0.01" value="${db.config.cotacaoOuro}"></div>
+        <div><label>% pago sobre o valor do metal</label><input id="oPct" type="number" value="85"></div>
+        <div class="full"><label>Descrição das peças</label><input id="oDescr" placeholder="Corrente partida, brinco sem par…"></div>
+        <div><label>Forma de pagamento</label><select id="oPag"><option>PIX</option><option>Dinheiro</option><option>Troca de ouro</option></select></div>
+        <div><label>Destino</label><select id="oDest"><option>Fundição</option><option>Reaproveitar na oficina</option><option>Revenda (peça boa)</option></select></div>
+      </form>
+      <table class="breakdown" style="margin-top:14px" id="oOut"></table>
+      <div class="row" style="margin-top:12px"><span></span><button class="btn pri" onclick="regCompraOuro()">Registrar compra</button></div>
+    </div>
+    <div class="card"><h2>Tabela rápida — valor por grama</h2>
+      ${table([{h:'Metal',f:r=>r[0]},{h:'Teor',num:1,f:r=>num(r[1]*100,1)+'%'},{h:'Valor metal/g',num:1,f:r=>brl(r[2])},{h:'Pagar (85%)/g',num:1,f:r=>`<b>${brl(r[2]*.85)}</b>`}],
+        Object.entries(TEORES).filter(([k])=>!k.startsWith('Aço')&&!k.startsWith('Platina')).map(([k,t])=>[k,t,metalGramValue(k,1)]))}
+      <p class="small muted">Boas práticas: testar com pedra de toque/ácido ou XRF, pesar em balança aferida, registrar CPF e documento, emitir nota de entrada e guardar fotos da peça (prevenção à receptação).</p>
+    </div>
+  </div>
+  <h2 style="margin-top:20px">Histórico de compras</h2>
+  ${table([{h:'Nº',f:c=>c.numero},{h:'Data',f:c=>fmtD(c.data)},{h:'Vendedor',f:c=>`${esc(c.vendedorNome)}<br><span class="small muted">${esc(c.cpf||'sem CPF')}</span>`},{h:'Peças',f:c=>esc(c.descricao)},{h:'Metal',f:c=>esc(c.metal)},{h:'Peso',num:1,f:c=>num(c.peso,2)+' g'},{h:'Pago',num:1,f:c=>`<b>${brl(c.valor)}</b>`},{h:'Destino',f:c=>`<span class="tag t-mute">${esc(c.destino)}</span>`}], db.compras.slice().reverse())}`;
+  ['#oMetal','#oPeso','#oDesc','#oCot','#oPct'].forEach(s=>$(s).oninput=calcOuro); calcOuro();
+};
+function calcOuro(){
+  const metal=$('#oMetal').value, peso=Math.max(0,(+$('#oPeso').value||0)-(+$('#oDesc').value||0)), cot=+$('#oCot').value||0, pct=+$('#oPct').value||0;
+  const t = TEORES[metal]; const base = metal.startsWith('Prata') ? db.config.cotacaoPrata/0.999 : cot;
+  const puro = peso*t, valMetal = puro*base, pagar = valMetal*pct/100;
+  $('#oOut').innerHTML = `<tr><td>Peso líquido</td><td class="num">${num(peso,2)} g</td></tr><tr><td>Metal puro (${num(t*100,1)}%)</td><td class="num">${num(puro,3)} g</td></tr><tr><td>Valor do metal</td><td class="num">${brl(valMetal)}</td></tr><tr><td><b>Valor a pagar (${pct}%)</b></td><td class="num calc-out">${brl(pagar)}</td></tr><tr><td class="small muted">Margem bruta na fundição</td><td class="num small muted">${brl(valMetal-pagar)}</td></tr>`;
+  return {metal,peso,cot,pct,pagar};
+}
+function regCompraOuro(){
+  const nome=$('#oNome').value.trim(); if(!nome){ toast('Informe o nome do vendedor'); $('#oNome').focus(); return; }
+  const r = calcOuro();
+  const c = {id:uid(),numero:nextNum('CO'),data:today(),vendedorNome:nome,cpf:$('#oCpf').value,descricao:$('#oDescr').value,peso:r.peso,metal:r.metal,cotacao:r.cot,percentual:r.pct,valor:Math.round(r.pagar*100)/100,pagamento:$('#oPag').value,destino:$('#oDest').value};
+  db.compras.push(c);
+  db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Saída',categoria:'Compra de ouro',descricao:'Compra '+c.numero+' — '+nome,valor:c.valor,pago:true});
+  save(); render(); toast('Compra registrada: '+brl(c.valor));
+}
+function editCotacao(){
+  openForm('Atualizar cotações', [
+    {k:'cotacaoOuro',label:'Ouro 24k — R$/g',type:'number',step:'0.01',req:true},
+    {k:'cotacaoPrata',label:'Prata 999 — R$/g',type:'number',step:'0.01',req:true},
+  ], db.config, o=>{ Object.assign(db.config,o); db.config.cotacaoData=today(); toast('Cotação atualizada'); });
+  $('#mBody').insertAdjacentHTML('beforeend','<p class="small muted" style="margin-top:12px">Consulte a cotação do dia (ex.: B3, Banco Central, Kitco ou seu fornecedor de metais). Em produção, isto pode ser atualizado automaticamente por API.</p>');
+}
+
+/* ---------- Consignação ---------- */
+VIEWS.consig = () => {
+  actions(`<button class="btn pri" onclick="novaConsig()">+ Nova consignação</button>`);
+  $('#view').innerHTML = `${table([
+    {h:'Nº',f:c=>`<b>${c.numero}</b>`},{h:'Saída',f:c=>fmtD(c.data)},{h:'Destinatário',f:c=>`${esc(c.destinatario)}<br><span class="small muted">${esc(c.tipo)}</span>`},
+    {h:'Peças',f:c=>c.itens.map(i=>`${esc(i.nome)}${i.res?` <span class="tag ${i.res==='Vendida'?'t-ok':'t-mute'}">${i.res}</span>`:''}`).join('<br>')},
+    {h:'Valor',num:1,f:c=>brl(c.itens.reduce((s,i)=>s+i.preco,0))},
+    {h:'Retorno',f:c=>`<span class="tag ${c.status!=='Em aberto'?'t-mute':c.prazo<today()?'t-bad':'t-info'}">${fmtD(c.prazo)}</span>`},
+    {h:'Status',f:c=>`<span class="tag ${c.status==='Em aberto'?'t-warn':'t-ok'}">${c.status}</span>`},
+    {h:'',f:c=>c.status==='Em aberto'?`<button class="btn sm" onclick="acertoConsig('${c.id}')">Fazer acerto</button>`:''}
+  ], db.consig.slice().reverse(), 'Nenhuma consignação.')}
+  <p class="small muted" style="margin-top:12px">A "malinha" é um controle crítico: as peças saem do estoque disponível (status Consignado) e só voltam ou viram venda no acerto — evitando perdas sem rastro.</p>`;
+};
+function novaConsig(){
+  const disp = db.produtos.filter(p=>p.qtd>0 && p.status==='Disponível');
+  openModal('Nova consignação', `<form class="form" onsubmit="return false">
+    <div class="full"><label>Destinatário *</label><input id="cgDest" list="cgCli" placeholder="Cliente ou representante"><datalist id="cgCli">${db.clientes.map(c=>`<option value="${esc(c.nome)}">`).join('')}</datalist></div>
+    <div><label>Tipo</label><select id="cgTipo"><option>Cliente (malinha)</option><option>Representante / vendedor externo</option><option>Outra loja</option></select></div>
+    <div><label>Prazo de retorno</label><input id="cgPrazo" type="date" value="${addDays(5)}"></div>
+    <div class="full"><label>Peças (marque)</label><div style="max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff">
+      ${disp.map(p=>`<label style="display:flex;gap:8px;font-weight:400;padding:4px 0"><input type="checkbox" value="${p.id}" class="cgP" style="width:auto"> ${p.codigo} — ${esc(p.nome)} <span class="muted" style="margin-left:auto">${brl(p.preco)}</span></label>`).join('')}</div></div>
+    <div class="full"><label>Observações</label><input id="cgObs"></div></form>`,
+    `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="cgSave">Registrar saída</button>`);
+  $('#cgSave').onclick = ()=>{
+    const dest=$('#cgDest').value.trim(); const ids=[...document.querySelectorAll('.cgP:checked')].map(x=>x.value);
+    if(!dest||!ids.length) return toast('Informe destinatário e ao menos uma peça');
+    const c={id:uid(),numero:nextNum('CG'),data:today(),destinatario:dest,tipo:$('#cgTipo').value,prazo:$('#cgPrazo').value,obs:$('#cgObs').value,status:'Em aberto',
+      itens:ids.map(id=>{const p=prodById(id); p.status='Consignado'; return {produtoId:id,nome:p.nome,preco:p.preco};})};
+    db.consig.push(c); save(); closeModal(); render(); toast('Consignação registrada');
+  };
+}
+function acertoConsig(id){
+  const c = db.consig.find(x=>x.id===id);
+  openModal('Acerto '+c.numero+' — '+c.destinatario, `<p class="small muted">Marque o que foi <b>vendido</b>. O restante retorna ao estoque disponível.</p>
+    ${c.itens.map((i,k)=>`<label style="display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)"><input type="checkbox" class="acV" data-k="${k}"> ${esc(i.nome)} <b style="margin-left:auto">${brl(i.preco)}</b></label>`).join('')}`,
+    `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="acOk">Concluir acerto</button>`);
+  $('#acOk').onclick = ()=>{
+    const vend = new Set([...document.querySelectorAll('.acV:checked')].map(x=>+x.dataset.k));
+    const cli = db.clientes.find(x=>x.nome===c.destinatario);
+    const itensV=[];
+    c.itens.forEach((i,k)=>{ const p=prodById(i.produtoId); if(p) p.status='Disponível';
+      if(vend.has(k)){ i.res='Vendida'; if(p){ p.qtd-=1; db.movs.push({id:uid(),data:today(),produtoId:p.id,tipo:'Saída (consignação)',qtd:-1,ref:c.numero}); itensV.push({produtoId:p.id,nome:p.nome,codigo:p.codigo,qtd:1,preco:i.preco,custo:p.custo,categoria:p.categoria}); } }
+      else i.res='Devolvida'; });
+    if(itensV.length){ const tot=itensV.reduce((s,i)=>s+i.preco,0); const v={id:uid(),numero:nextNum('V'),data:today(),clienteId:cli?.id||'',vendedorId:db.vendedores[0].id,itens:itensV,desconto:0,total:tot,pagamento:'PIX',parcelas:1,origem:c.numero}; db.vendas.push(v); db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Entrada',categoria:'Venda',descricao:'Venda '+v.numero+' (acerto '+c.numero+')',valor:tot,pago:true}); }
+    c.status='Acertada'; save(); closeModal(); render(); toast('Acerto concluído');
+  };
+}
+
+/* ---------- Clientes ---------- */
+let cliQ='';
+const CLI_FIELDS = () => [
+  {k:'nome',label:'Nome',req:true,full:true},{k:'cpf',label:'CPF'},{k:'tel',label:'Telefone / WhatsApp'},{k:'email',label:'E-mail',type:'email'},
+  {k:'nasc',label:'Data de nascimento',type:'date'},{k:'aro',label:'Aro / medida do dedo'},{k:'dataEspecial',label:'Data especial (casamento, noivado…)'},
+  {k:'preferencias',label:'Preferências (metal, estilo, pedras)',full:true},{k:'obs',label:'Observações',type:'textarea',full:true}
+];
+VIEWS.clientes = () => {
+  actions(`<button class="btn pri" onclick="editCli()">+ Novo cliente</button>`);
+  const stats = id => { const vs=db.vendas.filter(v=>v.clienteId===id); return {n:vs.length,tot:vs.reduce((s,v)=>s+v.total,0),ult:vs.map(v=>v.data).sort().pop()}; };
+  const list = db.clientes.filter(c=>!cliQ||(c.nome+c.tel+c.cpf+c.email).toLowerCase().includes(cliQ.toLowerCase())).map(c=>({...c,_s:stats(c.id)})).sort((a,b)=>b._s.tot-a._s.tot);
+  $('#view').innerHTML = `<div class="toolbar"><input class="search" id="cq" placeholder="Buscar por nome, telefone, CPF…" value="${esc(cliQ)}"><span class="sp"></span><span class="muted small">${db.clientes.length} clientes · ordenado por valor comprado</span></div>
+  ${table([
+    {h:'Cliente',f:c=>`<b>${esc(c.nome)}</b><br><span class="small muted">${esc(c.tel)}</span>`},
+    {h:'Aniversário',f:c=>c.nasc?fmtD(c.nasc).slice(0,5):'—'},
+    {h:'Aro',f:c=>esc(c.aro||'—')},
+    {h:'Preferências',f:c=>`<span class="small">${esc(c.preferencias||'')}</span>${c.dataEspecial?`<br><span class="tag t-gold">${esc(c.dataEspecial)}</span>`:''}`},
+    {h:'Compras',num:1,f:c=>c._s.n},
+    {h:'Total comprado',num:1,f:c=>`<b>${brl(c._s.tot)}</b>`},
+    {h:'Última',f:c=>fmtD(c._s.ult)},
+    {h:'',f:c=>`<button class="btn sm" onclick="fichaCli('${c.id}')">Ficha</button> <button class="btn sm" onclick="editCli('${c.id}')">Editar</button>`}
+  ], list)}`;
+  $('#cq').oninput=e=>{cliQ=e.target.value; const pos=e.target.selectionStart; VIEWS.clientes(); const n=$('#cq'); n.focus(); n.setSelectionRange(pos,pos);};
+};
+function editCli(id){
+  const c = id ? db.clientes.find(x=>x.id===id) : {};
+  openForm(id?'Editar cliente':'Novo cliente', CLI_FIELDS(), c, o=>{ if(id) Object.assign(c,o); else db.clientes.push({id:uid(),criado:today(),...o}); toast('Cliente salvo'); });
+}
+function fichaCli(id){
+  const c = db.clientes.find(x=>x.id===id);
+  const vs = db.vendas.filter(v=>v.clienteId===id).slice().reverse(), os = db.os.filter(o=>o.clienteId===id).slice().reverse();
+  openModal(c.nome, `<div class="grid g3" style="margin-bottom:14px">
+      <div><div class="small muted">Telefone</div><b>${esc(c.tel||'—')}</b></div><div><div class="small muted">Aniversário</div><b>${fmtD(c.nasc)}</b></div><div><div class="small muted">Aro</div><b>${esc(c.aro||'—')}</b></div></div>
+    <p><span class="small muted">Preferências:</span> ${esc(c.preferencias||'—')}<br><span class="small muted">Data especial:</span> ${esc(c.dataEspecial||'—')}</p>
+    <h3>Compras (${vs.length}) — ${brl(vs.reduce((s,v)=>s+v.total,0))}</h3>
+    ${table([{h:'Data',f:v=>fmtD(v.data)},{h:'Itens',f:v=>v.itens.map(i=>esc(i.nome)).join(', ')},{h:'Total',num:1,f:v=>brl(v.total)}], vs, 'Sem compras')}
+    <h3 style="margin-top:14px">Serviços (${os.length})</h3>
+    ${table([{h:'OS',f:o=>o.numero},{h:'Serviço',f:o=>esc(o.tipo)},{h:'Status',f:o=>`<span class="tag t-mute">${o.status}</span>`}], os, 'Sem serviços')}`,
+    `<button class="btn pri" onclick="closeModal()">Fechar</button>`);
+}
+
+/* ---------- Financeiro ---------- */
+let finFiltro='Pendentes';
+VIEWS.financeiro = () => {
+  actions(`<button class="btn" onclick="editFin(null,'Entrada')">+ Conta a receber</button><button class="btn pri" onclick="editFin(null,'Saída')">+ Conta a pagar</button>`);
+  const mk = today().slice(0,7);
+  const mes = db.fin.filter(f=>f.pago && monthKey(f.venc)===mk);
+  const ent = mes.filter(f=>f.tipo==='Entrada').reduce((s,f)=>s+f.valor,0), sai = mes.filter(f=>f.tipo==='Saída').reduce((s,f)=>s+f.valor,0);
+  const saldo = db.fin.filter(f=>f.pago).reduce((s,f)=>s+(f.tipo==='Entrada'?f.valor:-f.valor),0) + 25000;
+  const apagar = db.fin.filter(f=>f.tipo==='Saída'&&!f.pago).reduce((s,f)=>s+f.valor,0), areceber = db.fin.filter(f=>f.tipo==='Entrada'&&!f.pago).reduce((s,f)=>s+f.valor,0);
+  let list = db.fin.slice();
+  if(finFiltro==='Pendentes') list = list.filter(f=>!f.pago); else if(finFiltro==='Mês atual') list = list.filter(f=>monthKey(f.venc)===mk); else if(finFiltro!=='Todos') list=list.filter(f=>f.tipo===finFiltro);
+  list.sort((a,b)=>finFiltro==='Pendentes'?a.venc.localeCompare(b.venc):b.venc.localeCompare(a.venc));
+  // DRE simplificada do mês
+  const cat = {}; mes.forEach(f=>{ const k=f.tipo+'|'+f.categoria; cat[k]=(cat[k]||0)+f.valor; });
+  $('#view').innerHTML = `<div class="grid g4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">Saldo em caixa (estimado)</div><div class="val">${brl(saldo)}</div><div class="sub">inclui saldo inicial de R$ 25.000 (demo)</div></div>
+    <div class="card kpi"><div class="lbl">Resultado do mês</div><div class="val" style="color:${ent-sai>=0?'var(--ok)':'var(--bad)'}">${brl(ent-sai)}</div><div class="sub">Entradas ${brl(ent)} · Saídas ${brl(sai)}</div></div>
+    <div class="card kpi"><div class="lbl">A pagar (pendente)</div><div class="val">${brl(apagar)}</div></div>
+    <div class="card kpi"><div class="lbl">A receber (pendente)</div><div class="val">${brl(areceber)}</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:2fr 1fr">
+    <div><div class="toolbar">${['Pendentes','Mês atual','Entrada','Saída','Todos'].map(f=>`<button class="btn sm ${f===finFiltro?'pri':''}" onclick="finFiltro='${f}';render()">${f}</button>`).join('')}</div>
+    ${table([
+      {h:'Vencimento',f:f=>`${fmtD(f.venc)}${!f.pago&&f.venc<today()?' <span class="tag t-bad">vencida</span>':''}`},
+      {h:'Descrição',f:f=>`${esc(f.descricao)}<br><span class="small muted">${esc(f.categoria)}</span>`},
+      {h:'Tipo',f:f=>`<span class="tag ${f.tipo==='Entrada'?'t-ok':'t-bad'}">${f.tipo}</span>`},
+      {h:'Valor',num:1,f:f=>`<b>${f.tipo==='Saída'?'− ':''}${brl(f.valor)}</b>`},
+      {h:'Situação',f:f=>f.pago?'<span class="tag t-mute">Quitado</span>':`<button class="btn sm" onclick="baixaFin('${f.id}')">Dar baixa</button>`},
+      {h:'',f:f=>`<button class="btn sm ghost" onclick="editFin('${f.id}')">✎</button>`}
+    ], list.slice(0,80))}</div>
+    <div class="card"><h2>DRE simplificada — mês atual</h2><table class="breakdown">
+      ${Object.entries(cat).sort().map(([k,v])=>{const [t,c]=k.split('|'); return `<tr><td>${t==='Entrada'?'(+)':'(−)'} ${esc(c)}</td><td class="num">${brl(v)}</td></tr>`;}).join('')}
+      <tr><td><b>Resultado</b></td><td class="num"><b>${brl(ent-sai)}</b></td></tr></table>
+      <p class="small muted" style="margin-top:10px">Considera apenas lançamentos quitados com vencimento no mês (regime de caixa).</p></div>
+  </div>`;
+};
+function editFin(id, tipo){
+  const f = id ? db.fin.find(x=>x.id===id) : {tipo,venc:addDays(7),pago:false};
+  openForm(id?'Editar lançamento':(tipo==='Entrada'?'Nova conta a receber':'Nova conta a pagar'), [
+    {k:'tipo',label:'Tipo',type:'select',options:['Entrada','Saída']},
+    {k:'categoria',label:'Categoria',type:'select',options:['Venda','Serviços','Crediário','Fornecedores','Compra de ouro','Aluguel','Folha de pagamento','Impostos','Seguro','Marketing','Energia/Água/Internet','Segurança/Monitoramento','Outros']},
+    {k:'descricao',label:'Descrição',req:true,full:true},
+    {k:'valor',label:'Valor (R$)',type:'number',step:'0.01',req:true},
+    {k:'venc',label:'Vencimento',type:'date',req:true},
+    {k:'pago',label:'Já quitado',type:'checkbox'},
+  ], f, o=>{ if(id) Object.assign(f,o); else db.fin.push({id:uid(),data:today(),...o}); toast('Lançamento salvo'); },
+  id?`<button class="btn danger" style="margin-right:auto" onclick="ask('Excluir lançamento?',()=>{db.fin=db.fin.filter(x=>x.id!=='${id}');save();render();})">Excluir</button>`:'');
+}
+function baixaFin(id){ const f=db.fin.find(x=>x.id===id); f.pago=true; f.pagoEm=today(); save(); render(); toast('Baixa registrada'); }
+
+/* ---------- Calculadora ---------- */
+VIEWS.calc = () => {
+  const c = db.config;
+  $('#view').innerHTML = `<div class="grid g2">
+    <div class="card"><h2>Formação de preço de peça</h2><form class="form" onsubmit="return false">
+      <div><label>Metal / teor</label><select id="kMetal">${Object.keys(TEORES).map(k=>`<option ${k==='Ouro 18k (750)'?'selected':''}>${k}</option>`).join('')}</select></div>
+      <div><label>Peso da peça (g)</label><input id="kPeso" type="number" step="0.01" value="4"></div>
+      <div><label>Perda de fundição (%)</label><input id="kPerda" type="number" step="0.5" value="5"></div>
+      <div><label>Mão de obra (R$/g)</label><input id="kMO" type="number" step="1" value="${c.maoObraG}"></div>
+      <div><label>Pedras / gemas (R$)</label><input id="kPedra" type="number" step="1" value="350"></div>
+      <div><label>Cravação, banho, acabamento (R$)</label><input id="kExtra" type="number" step="1" value="120"></div>
+      <div><label>Markup</label><input id="kMk" type="number" step="0.1" value="${c.markup}"></div>
+      <div><label>Impostos + taxa cartão (%)</label><input id="kImp" type="number" step="0.5" value="10"></div>
+    </form>
+    <p class="small muted" style="margin-top:10px">Cotação usada: 24k ${brl(c.cotacaoOuro)}/g · prata ${brl(c.cotacaoPrata)}/g. Altere em Configurações.</p></div>
+    <div class="card"><h2>Resultado</h2><table class="breakdown" id="kOut"></table></div>
+  </div>`;
+  ['#kMetal','#kPeso','#kPerda','#kMO','#kPedra','#kExtra','#kMk','#kImp'].forEach(s=>$(s).oninput=calcPreco); calcPreco();
+};
+function calcPreco(){
+  const metal=$('#kMetal').value, peso=+$('#kPeso').value||0, perda=+$('#kPerda').value||0, mo=+$('#kMO').value||0, pedra=+$('#kPedra').value||0, extra=+$('#kExtra').value||0, mk=+$('#kMk').value||1, imp=+$('#kImp').value||0;
+  const metalV = metalGramValue(metal, peso*(1+perda/100)), maoV = mo*peso, custo = metalV+maoV+pedra+extra;
+  const preco = custo*mk, liquido = preco*(1-imp/100), lucro = liquido-custo;
+  $('#kOut').innerHTML = `<tr><td>Metal (${num(peso*(1+perda/100),2)} g c/ perda)</td><td class="num">${brl(metalV)}</td></tr>
+    <tr><td>Mão de obra</td><td class="num">${brl(maoV)}</td></tr><tr><td>Pedras</td><td class="num">${brl(pedra)}</td></tr><tr><td>Acabamento</td><td class="num">${brl(extra)}</td></tr>
+    <tr><td><b>Custo total</b></td><td class="num"><b>${brl(custo)}</b></td></tr>
+    <tr><td><b>Preço sugerido (×${num(mk,1)})</b></td><td class="num calc-out">${brl(Math.ceil(preco/10)*10-0.1)}</td></tr>
+    <tr><td>Preço à vista c/ 10% off</td><td class="num">${brl(preco*.9)}</td></tr>
+    <tr><td>10× sem juros</td><td class="num">${brl(preco/10)}</td></tr>
+    <tr><td>Lucro após impostos/taxas</td><td class="num" style="color:var(--ok)"><b>${brl(lucro)}</b> (${num(preco?lucro/preco*100:0,1)}%)</td></tr>`;
+}
+function sugerirPreco(){ go('calc'); }
+
+/* ---------- Relatórios ---------- */
+let relPeriodo = 90;
+VIEWS.relatorios = () => {
+  const lim = addDays(-relPeriodo); const vs = db.vendas.filter(v=>v.data>=lim);
+  const fat = vs.reduce((s,v)=>s+v.total,0), custo = vs.reduce((s,v)=>s+v.itens.reduce((a,i)=>a+(i.custo||0)*i.qtd,0),0);
+  const byV = {}; vs.forEach(v=>{ const k=v.vendedorId; byV[k]=byV[k]||{n:0,tot:0}; byV[k].n++; byV[k].tot+=v.total; });
+  const byP = {}; vs.forEach(v=>v.itens.forEach(i=>{ byP[i.nome]=byP[i.nome]||{q:0,tot:0,custo:0,cat:i.categoria}; byP[i.nome].q+=i.qtd; byP[i.nome].tot+=i.preco*i.qtd; byP[i.nome].custo+=(i.custo||0)*i.qtd; }));
+  const byPag = {}; vs.forEach(v=>{ byPag[v.pagamento]=(byPag[v.pagamento]||0)+v.total; });
+  const parados = db.produtos.filter(p=>p.qtd>0 && !vs.some(v=>v.itens.some(i=>i.produtoId===p.id)));
+  const estCusto = db.produtos.reduce((s,p)=>s+p.custo*p.qtd,0);
+  $('#view').innerHTML = `<div class="toolbar">${[30,90,180].map(d=>`<button class="btn sm ${d===relPeriodo?'pri':''}" onclick="relPeriodo=${d};render()">Últimos ${d} dias</button>`).join('')}</div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">Faturamento</div><div class="val">${brl(fat)}</div><div class="sub">${vs.length} vendas</div></div>
+    <div class="card kpi"><div class="lbl">Lucro bruto</div><div class="val">${brl(fat-custo)}</div><div class="sub">Margem ${num(fat?(fat-custo)/fat*100:0,1)}%</div></div>
+    <div class="card kpi"><div class="lbl">Giro de estoque (anualizado)</div><div class="val">${num(estCusto?custo/estCusto*(365/relPeriodo):0,2)}×</div><div class="sub">CMV ÷ estoque a custo</div></div>
+    <div class="card kpi"><div class="lbl">Peças sem venda no período</div><div class="val">${parados.length}</div><div class="sub">${brl(parados.reduce((s,p)=>s+p.custo*p.qtd,0))} parados a custo</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h2>Ranking de vendedores e comissões</h2>${table([
+      {h:'Vendedor(a)',f:r=>esc(vendName(r[0]))},{h:'Vendas',num:1,f:r=>r[1].n},{h:'Faturamento',num:1,f:r=>brl(r[1].tot)},
+      {h:'Comissão',num:1,f:r=>`<b>${brl(r[1].tot*(db.vendedores.find(v=>v.id===r[0])?.comissao||0)/100)}</b>`}], Object.entries(byV).sort((a,b)=>b[1].tot-a[1].tot))}</div>
+    <div class="card"><h2>Formas de pagamento</h2>${table([{h:'Forma',f:r=>r[0]},{h:'Valor',num:1,f:r=>brl(r[1])},{h:'%',num:1,f:r=>num(fat?r[1]/fat*100:0,1)+'%'}], Object.entries(byPag).sort((a,b)=>b[1]-a[1]))}</div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h2>Produtos mais vendidos</h2>${table([{h:'Peça',f:r=>esc(r[0])},{h:'Qtd',num:1,f:r=>r[1].q},{h:'Faturamento',num:1,f:r=>brl(r[1].tot)},{h:'Margem',num:1,f:r=>num(r[1].tot?(r[1].tot-r[1].custo)/r[1].tot*100:0,1)+'%'}], Object.entries(byP).sort((a,b)=>b[1].tot-a[1].tot).slice(0,10))}</div>
+    <div class="card"><h2>Estoque parado (sem venda no período)</h2>${table([{h:'Peça',f:p=>`${p.codigo} — ${esc(p.nome)}`},{h:'Desde',f:p=>fmtD(p.criado)},{h:'Custo parado',num:1,f:p=>brl(p.custo*p.qtd)}], parados, 'Nenhuma peça parada 🎉')}
+    <p class="small muted" style="margin-top:8px">Ação sugerida: mudar de vitrine, incluir em campanha ou reaproveitar o metal na oficina.</p></div>
+  </div>`;
+};
+
+/* ---------- Benchmark ---------- */
+VIEWS.benchmark = () => {
+  const Y='<span class="yes">●</span>', N='<span class="no">○</span>', P='<span class="part">◐</span>';
+  const rows = [
+    ['PDV / frente de caixa',Y,Y,Y,Y,Y,Y],
+    ['Estoque por peça (código, peso, teor, pedras)',Y,Y,P,Y,P,Y],
+    ['Ordens de serviço / consertos',Y,Y,P,Y,N,Y],
+    ['Encomendas sob medida',Y,Y,N,Y,N,Y],
+    ['Compra de ouro usado (peso × teor × cotação)',P,P,N,N,N,Y],
+    ['Consignação / memo / malinha',Y,Y,N,Y,N,Y],
+    ['CRM (aro, datas especiais, histórico)',Y,Y,P,P,P,Y],
+    ['Comissão de vendedores',Y,Y,Y,P,P,Y],
+    ['Calculadora de preço pela cotação',P,P,N,N,N,Y],
+    ['Financeiro (pagar/receber, DRE)',P,Y,P,Y,Y,Y],
+    ['Crediário próprio',N,N,N,N,P,Y],
+    ['NF-e / NFC-e brasileira',N,N,N,N,Y,'Próx. fase'],
+    ['PIX e meios de pagamento BR',N,N,N,P,Y,'Registro ✓ / integração próx. fase'],
+    ['Idioma e moeda (pt-BR / R$)',N,N,P,P,Y,Y],
+    ['Faixa de preço',"US$ 159+/mês","Licença + mensal","US$ 89+/mês","Projeto ERP (alto)","R$ 100–500/mês","Seu próprio sistema"],
+  ];
+  $('#view').innerHTML = `
+  <div class="card" style="margin-bottom:14px"><h2>Como a pesquisa foi feita</h2>
+  <p>Comparei os sistemas mais citados em diretórios (Capterra, Software Advice, GetApp) e materiais dos fornecedores, separando dois grupos: <b>softwares especializados em joalheria</b> (Jewel360, The Edge, Adaptive Jewelry ERP) e <b>sistemas genéricos de varejo/ERP</b> usados por joalherias (Lightspeed, ERPs brasileiros como Omie/Bling, Odoo). O padrão encontrado: os especializados cobrem bem reparos, consignação e peças únicas, mas <b>não atendem a parte fiscal e de pagamento do Brasil</b>; os genéricos brasileiros emitem nota e integram PIX, mas <b>não entendem peso, teor, ouro usado nem ordens de serviço</b>. O Joia Gestão foi desenhado para ocupar esse espaço.</p>
+  <p class="small muted">Legenda: ${Y} completo · ${P} parcial / via módulo extra · ${N} não oferece. Avaliação baseada em material público de cada fornecedor (nov/2026); confirme em demonstração antes de contratar.</p></div>
+  <div class="tbl-wrap bm"><table><thead><tr><th>Funcionalidade</th><th>Jewel360</th><th>The Edge</th><th>Lightspeed Retail</th><th>Adaptive Jewelry ERP</th><th>ERP BR genérico (Omie, Bling…)</th><th style="color:var(--gold)">Joia Gestão</th></tr></thead>
+  <tbody>${rows.map(r=>`<tr>${r.map((c,i)=>`<td style="${i===6?'background:#fbf5e6;font-weight:600':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>✅ O que copiamos dos melhores</h3><ul class="small">
+      <li>Rastreamento de reparos ponta a ponta com status (Jewel360, The Edge)</li><li>Controle de memo/consignação (The Edge, Adaptive)</li><li>Histórico do cliente + datas especiais (CRM de joalheria)</li><li>Comissões por vendedor (Lightspeed, The Edge)</li><li>Etiquetas com código de barras para vitrine</li></ul></div>
+    <div class="card"><h3>🇧🇷 Diferenciais para o Brasil</h3><ul class="small">
+      <li>Compra de ouro usado com cálculo por teor e CPF do vendedor</li><li>Abatimento de ouro na venda ("troca")</li><li>Crediário próprio com parcelas no contas a receber</li><li>Formação de preço pela cotação do dia</li><li>Tudo em português e em reais</li></ul></div>
+    <div class="card"><h3>🚀 Próximas fases (versão produção)</h3><ul class="small">
+      <li>Banco de dados em nuvem + login por usuário e permissões</li><li>Emissão de NFC-e/NF-e (via API fiscal, ex.: Focus NFe, PlugNotas)</li><li>PIX com QR dinâmico e TEF de cartão</li><li>Cotação automática do ouro</li><li>WhatsApp: aviso de "peça pronta" e aniversário</li><li>Fotos das peças, certificados e inventário por leitor</li><li>Multi-loja e loja virtual integrada</li></ul></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Fontes consultadas</h3><ul class="small">
+    <li><a href="https://jewel360.com/blog/jewelry-inventory-software-features" target="_blank" rel="noopener">Jewel360 — recursos de software de estoque para joalherias</a></li>
+    <li><a href="https://www.softwareadvice.com.au/compare/1109/365736/the-edge/vs/jewel360" target="_blank" rel="noopener">Software Advice — The Edge vs Jewel360</a></li>
+    <li><a href="https://www.capterra.co.uk/compare/79243/1034705/edge/vs/jewel360" target="_blank" rel="noopener">Capterra — The Edge vs Jewel360</a></li>
+    <li><a href="https://www.sourceforge.net/software/compare/Adaptive-Jewelry-ERP-vs-The-Edge-Jewelry" target="_blank" rel="noopener">SourceForge — Adaptive Jewelry ERP vs The Edge</a></li>
+    <li><a href="https://www.getapp.com/retail-consumer-services-software/jewelry-store-management/f/for-jewelry-stores/" target="_blank" rel="noopener">GetApp — softwares para joalherias</a></li>
+    <li><a href="https://www.capterra.pt/software/1034705/jewel360" target="_blank" rel="noopener">Capterra PT — Jewel360</a></li>
+    <li><a href="https://www.mrpeasy.com/pt/industrias/joalheria" target="_blank" rel="noopener">MRPeasy — joalheria (rastreio por número de série)</a></li>
+    <li><a href="https://www.dasolo.ai/pt/blog/odoo-por-industria-8/odoo-joalharias-gestao-stock-525" target="_blank" rel="noopener">Odoo para joalharias — gestão de stock</a></li>
+    <li><a href="https://simplifique.contmatic.com.br/blogs/sistema-de-gestao-para-lojas" target="_blank" rel="noopener">Contmatic — requisitos de sistema de gestão para lojas</a></li>
+    <li><a href="https://sebraepr.com.br/wp-content/uploads/2024/09/Joalheria-Comece-seu-negocio.pdf" target="_blank" rel="noopener">Sebrae PR — Joalheria: comece seu negócio</a></li>
+  </ul></div>`;
+};
+
+/* ---------- Configurações ---------- */
+VIEWS.config = () => {
+  const c = db.config;
+  $('#view').innerHTML = `<div class="grid g2">
+    <div class="card"><h2>Dados da loja e parâmetros</h2><form class="form" onsubmit="return false">
+      <div class="full"><label>Nome da loja</label><input id="sLoja" value="${esc(c.loja)}"></div>
+      <div><label>CNPJ</label><input id="sCnpj" value="${esc(c.cnpj)}"></div>
+      <div><label>Markup padrão</label><input id="sMk" type="number" step="0.1" value="${c.markup}"></div>
+      <div><label>Cotação ouro 24k (R$/g)</label><input id="sOuro" type="number" step="0.01" value="${c.cotacaoOuro}"></div>
+      <div><label>Cotação prata (R$/g)</label><input id="sPrata" type="number" step="0.01" value="${c.cotacaoPrata}"></div>
+      <div><label>Mão de obra padrão (R$/g)</label><input id="sMO" type="number" step="1" value="${c.maoObraG}"></div>
+    </form><div class="row" style="margin-top:12px"><span></span><button class="btn pri" onclick="saveCfg()">Salvar</button></div></div>
+    <div class="card"><h2>Vendedores e comissões</h2>${table([{h:'Nome',f:v=>esc(v.nome)},{h:'Comissão',num:1,f:v=>v.comissao+'%'},{h:'',f:v=>`<button class="btn sm" onclick="editVend('${v.id}')">Editar</button>`}], db.vendedores)}
+      <button class="btn" style="margin-top:10px" onclick="editVend()">+ Vendedor</button>
+      <h2 style="margin-top:20px">Ourives / oficinas</h2><ul class="list">${db.ourives.map((o,i)=>`<li>${esc(o)}<button class="btn sm ghost" onclick="db.ourives.splice(${i},1);save();render()">remover</button></li>`).join('')}</ul>
+      <div class="row" style="margin-top:6px"><input id="novoOur" class="search" placeholder="Novo ourives"><button class="btn" style="flex:0 0 auto" onclick="if($('#novoOur').value.trim()){db.ourives.push($('#novoOur').value.trim());save();render();}">Adicionar</button></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Backup e dados</h2>
+    <p class="small muted">Nesta versão de demonstração os dados ficam salvos <b>apenas neste navegador</b>. Use o backup para guardar uma cópia ou levar para outro computador.</p>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-start"><button class="btn" style="flex:0 0 auto" onclick="backup()">Gerar backup (JSON)</button><button class="btn" style="flex:0 0 auto" onclick="restaurar()">Restaurar backup</button><button class="btn danger" style="flex:0 0 auto" onclick="ask('Apagar tudo e recarregar dados de demonstração?',()=>{db=seed();save();render();toast('Dados de demonstração recarregados')})">Recarregar demonstração</button><button class="btn danger" style="flex:0 0 auto" onclick="ask('Começar do zero? Todos os dados serão apagados (cotação e vendedores são mantidos).',zerar)">Começar do zero</button></div>
+  </div>`;
+};
+function saveCfg(){ Object.assign(db.config,{loja:$('#sLoja').value,cnpj:$('#sCnpj').value,markup:+$('#sMk').value,cotacaoOuro:+$('#sOuro').value,cotacaoPrata:+$('#sPrata').value,maoObraG:+$('#sMO').value,cotacaoData:today()}); save(); render(); toast('Configurações salvas'); }
+function editVend(id){
+  const v = id ? db.vendedores.find(x=>x.id===id) : {comissao:db.config.comissaoPadrao};
+  openForm(id?'Editar vendedor':'Novo vendedor',[{k:'nome',label:'Nome',req:true},{k:'comissao',label:'Comissão (%)',type:'number',step:'0.5'}], v, o=>{ if(id) Object.assign(v,o); else db.vendedores.push({id:uid(),...o}); });
+}
+function backup(){
+  const data = JSON.stringify(db);
+  try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:'application/json'})); a.download='joia-gestao-backup-'+today()+'.json'; document.body.appendChild(a); a.click(); a.remove(); }catch(e){}
+  openModal('Backup', `<p class="small muted">Se o download não começar, copie o conteúdo abaixo e salve num arquivo .json.</p><textarea id="bk" style="width:100%;height:220px;font-family:monospace;font-size:11px">${esc(data)}</textarea>`,
+    `<button class="btn" onclick="copyText($('#bk').value)">Copiar</button><button class="btn pri" onclick="closeModal()">OK</button>`);
+}
+function restaurar(){
+  openModal('Restaurar backup', `<p class="small muted">Escolha o arquivo .json ou cole o conteúdo.</p><input type="file" id="bkF" accept=".json,application/json"><textarea id="bkT" style="width:100%;height:160px;margin-top:10px;font-family:monospace;font-size:11px" placeholder="…ou cole o JSON aqui"></textarea>`,
+    `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="bkOk">Restaurar</button>`);
+  $('#bkF').onchange = e=>{ const f=e.target.files[0]; if(f) f.text().then(t=>$('#bkT').value=t); };
+  $('#bkOk').onclick = ()=>{ try{ const d=JSON.parse($('#bkT').value); if(!d.produtos||!d.config) throw 0; db=d; save(); closeModal(); render(); toast('Backup restaurado'); }catch(e){ toast('Arquivo inválido'); } };
+}
+function zerar(){ const k={config:db.config,vendedores:db.vendedores,ourives:db.ourives}; db={...k,produtos:[],clientes:[],vendas:[],os:[],compras:[],consig:[],fin:[],movs:[],seq:{}}; save(); render(); toast('Sistema zerado'); }
+
+/* ---------------- Start ---------------- */
+db = load();
+route();
+</script>
+</body>
+</html>

@@ -383,7 +383,7 @@ function barChart(labels, vals, horiz){
     labels.forEach((l,i)=>{const cx=L+pw*(i+.5)/labels.length, h=(vals[i]/max)*ph, y=T+ph-h;
       g+=`<g class="bar"><rect x="${cx-pw/labels.length/2}" y="${T}" width="${pw/labels.length}" height="${ph}" fill="transparent"/><path d="M${cx-bw/2},${T+ph} V${y+Math.min(4,h)} q0,-4 4,-4 H${cx+bw/2-4} q4,0 4,4 V${T+ph}Z" fill="${col}"/><text x="${cx}" y="${H-8}" text-anchor="middle" font-size="11" fill="${ink}">${esc(l)}</text><title>${esc(l)}: ${brl(vals[i])}</title></g>`;});
   } else {
-    const L=96,R=14,T=4,B=22, pw=W-L-R, ph=H-T-B, rh=ph/Math.max(labels.length,1), bh=Math.min(20,rh*.7);
+    const L=96,R=34,T=4,B=22, pw=W-L-R, ph=H-T-B, rh=ph/Math.max(labels.length,1), bh=Math.min(20,rh*.7);
     ticks.forEach(t=>{const x=L+(t/max)*pw; g+=`<line x1="${x}" x2="${x}" y1="${T}" y2="${T+ph}" stroke="${grid}"/><text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" fill="${ink}">${kfmt(t)}</text>`;});
     labels.forEach((l,i)=>{const cy=T+rh*(i+.5), w=(vals[i]/max)*pw;
       g+=`<g class="bar"><rect x="0" y="${cy-rh/2}" width="${W}" height="${rh}" fill="transparent"/><path d="M${L},${cy-bh/2} H${L+Math.max(w-4,0)} q4,0 4,4 V${cy+bh/2-4} q0,4 -4,4 H${L}Z" fill="${col}"/><text x="${L-8}" y="${cy+4}" text-anchor="end" font-size="11.5" fill="${ink}">${esc(l)}</text><title>${esc(l)}: ${brl(vals[i])}</title></g>`;});

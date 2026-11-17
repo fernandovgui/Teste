@@ -58,7 +58,7 @@ table{width:100%;border-collapse:collapse}
 th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
 th{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;background:#fbf8f2;position:sticky;top:0}
 tr:hover td{background:#fcf9f3}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
 .tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap}
 .t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-gold{background:var(--gold-soft);color:#7a5810}.t-mute{background:#eeeae2;color:#5a554c}
@@ -346,6 +346,7 @@ const PAGES = [
   {id:'pdv',ic:'🛒',t:'Ponto de Venda',s:'Venda rápida com desconto, parcelamento, comissão e recibo'},
   {id:'estoque',ic:'💎',t:'Estoque de Peças',s:'Cadastro por código, metal, teor, peso, pedras, custo e preço'},
   {id:'os',ic:'🛠',t:'Ordens de Serviço',s:'Consertos, encomendas, ajustes e gravações — do balcão à entrega'},
+  {id:'producao',ic:'🏭',t:'Produção (PCP)',s:'Ordens de produção com controle por etapa: peso, perdas, terceiros, metal e custo'},
   {id:'ouro',ic:'⚖',t:'Compra de Ouro',s:'Compra de ouro usado com cálculo por peso × teor × cotação'},
   {id:'consig',ic:'👜',t:'Consignação / Malinha',s:'Peças que saíram da loja para clientes ou representantes'},
   {sec:'Relacionamento'},
@@ -391,6 +392,7 @@ function barChart(labels, vals, horiz){
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Gráfico de barras" style="font-family:Inter,sans-serif">${g}</svg>`;
 }
 function render(){
+  ensureProducao();
   const p = PAGES.find(x=>x.id===page);
   $('#nav').innerHTML = PAGES.map(x=> x.sec ? `<div class="sec">${x.sec}</div>` : `<a href="#${x.id}" class="${x.id===page?'active':''}"><span class="ic">${x.ic}</span>${x.t}</a>`).join('');
   $('#pgTitle').textContent = p.t; $('#pgSub').textContent = p.s; $('#pgActions').innerHTML='';
@@ -441,6 +443,8 @@ VIEWS.painel = () => {
       ${osAtras.map(o=>`<li><span>OS ${o.numero} atrasada — ${esc(cliName(o.clienteId))}</span><span class="tag t-bad">venceu ${fmtD(o.prazo)}</span></li>`).join('')}
       ${baixo.map(p=>`<li><span>${esc(p.nome)}</span><span class="tag ${p.qtd<=0?'t-bad':'t-warn'}">${p.qtd<=0?'sem estoque':'estoque baixo'}</span></li>`).join('')}
       ${pagar7.map(f=>`<li><span>${esc(f.descricao)}</span><span class="tag t-warn">${brl(f.valor)} · ${fmtD(f.venc)}</span></li>`).join('')}
+      ${db.producao.ops.filter(opAtrasada).map(o=>`<li><span>Produção ${o.numero} atrasada — ${esc(o.descricao)}</span><span class="tag t-bad">${esc(opEtapaNome(o))}</span></li>`).join('')}
+      ${db.producao.ops.filter(o=>o.status==='Em produção').flatMap(o=>o.etapas.filter(e=>e.done&&Number(e.pesoEnt)&&perdaPct(e)>e.tol).map(e=>`<li><span>Perda acima da tolerância — ${o.numero} (${esc(e.nome)})</span><span class="tag t-bad">${num(perdaPct(e),1)}%</span></li>`)).join('')}
       ${consigAb.filter(c=>c.prazo<=addDays(3)).map(c=>`<li><span>Consignação ${c.numero} — ${esc(c.destinatario)}</span><span class="tag t-info">retorno ${fmtD(c.prazo)}</span></li>`).join('')}
       ${(!osAtras.length&&!baixo.length&&!pagar7.length)?'<li class="muted">Tudo em dia ✨</li>':''}
     </ul></div>
@@ -653,7 +657,7 @@ function novaOS(id){
     if(id) Object.assign(o,v);
     else { const n={id:uid(),numero:nextNum('OS'),data:today(),...v}; db.os.push(n); if(n.sinal>0) db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Entrada',categoria:'Serviços',descricao:`Sinal ${n.numero}`,valor:n.sinal,pago:true}); }
     toast('Ordem de serviço salva');
-  }, id?`<button class="btn" style="margin-right:auto" onclick="osComprovante('${id}')">Comprovante</button>`:'');
+  }, id?`<button class="btn" style="margin-right:auto" onclick="osComprovante('${id}')">Comprovante</button>${o.tipo==='Sob encomenda'?(o.opId?`<button class="btn" onclick="closeModal();prodTab='quadro';go('producao');setTimeout(()=>fichaOP('${o.opId}'),100)">Ver OP de produção</button>`:`<button class="btn" onclick="opFromOS('${id}')">🏭 Gerar OP de produção</button>`):''}`:'');
 }
 function osComprovante(id){
   const o = db.os.find(x=>x.id===id);
@@ -730,6 +734,7 @@ function regCompraOuro(){
   const r = calcOuro();
   const c = {id:uid(),numero:nextNum('CO'),data:today(),vendedorNome:nome,cpf:$('#oCpf').value,descricao:$('#oDescr').value,peso:r.peso,metal:r.metal,cotacao:r.cot,percentual:r.pct,valor:Math.round(r.pagar*100)/100,pagamento:$('#oPag').value,destino:$('#oDest').value};
   db.compras.push(c);
+  if(c.destino!=='Revenda (peça boa)'){ ensureProducao(); metalMov(c.metal, c.peso, 'Entrada (compra de ouro usado)', c.numero); }
   db.fin.push({id:uid(),data:today(),venc:today(),tipo:'Saída',categoria:'Compra de ouro',descricao:'Compra '+c.numero+' — '+nome,valor:c.valor,pago:true});
   save(); render(); toast('Compra registrada: '+brl(c.valor));
 }
@@ -950,6 +955,8 @@ VIEWS.benchmark = () => {
     ['PDV / frente de caixa',Y,Y,Y,Y,Y,Y],
     ['Estoque por peça (código, peso, teor, pedras)',Y,Y,P,Y,P,Y],
     ['Ordens de serviço / consertos',Y,Y,P,Y,N,Y],
+    ['Produção (PCP) por etapas com peso e perdas',N,P,N,Y,N,Y],
+    ['Conta-corrente de metal e recuperação',N,P,N,Y,N,Y],
     ['Encomendas sob medida',Y,Y,N,Y,N,Y],
     ['Compra de ouro usado (peso × teor × cotação)',P,P,N,N,N,Y],
     ['Consignação / memo / malinha',Y,Y,N,Y,N,Y],
@@ -969,6 +976,17 @@ VIEWS.benchmark = () => {
   <p class="small muted">Legenda: ${Y} completo · ${P} parcial / via módulo extra · ${N} não oferece. Avaliação baseada em material público de cada fornecedor (nov/2026); confirme em demonstração antes de contratar.</p></div>
   <div class="tbl-wrap bm"><table><thead><tr><th>Funcionalidade</th><th>Jewel360</th><th>The Edge</th><th>Lightspeed Retail</th><th>Adaptive Jewelry ERP</th><th>ERP BR genérico (Omie, Bling…)</th><th style="color:var(--gold)">Joia Gestão</th></tr></thead>
   <tbody>${rows.map(r=>`<tr>${r.map((c,i)=>`<td style="${i===6?'background:#fbf5e6;font-weight:600':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <div class="card" style="margin-top:14px"><h2>🏭 Módulo de Produção — referência: PCP do CAPTA ERP</h2>
+    <p class="small">O <b>CAPTA</b> (Capta Tecnologia) é um ERP brasileiro voltado ao ramo joalheiro. Segundo o fornecedor, o PCP dele começa a produção a partir de <b>pedidos de clientes, reposição de estoque, histórico de vendas ou estoque mínimo</b>. Ele controla a produção <b>interna e a de terceiros</b>, mostra a <b>carga por setor</b> e registra os <b>materiais recuperados</b>. Na finalização, faz a <b>entrada no estoque, baixa de materiais, etiqueta e cálculo de custo</b>. O módulo Produção do Joia Gestão segue o mesmo desenho:</p>
+    <div class="tbl-wrap"><table><thead><tr><th>Recurso do PCP CAPTA</th><th>Como ficou no Joia Gestão</th></tr></thead><tbody>
+      <tr><td>Origem da produção (pedido, reposição, histórico, mínimo)</td><td>Campo "Origem" na OP + botão <b>Sugestões de produção</b> que lista pedidos sem OP, itens abaixo do mínimo e itens de alto giro</td></tr>
+      <tr><td>Produção interna e externa (terceiros)</td><td>Cada etapa registra o responsável: ourives interno ou prestador. Serviço de terceiro gera conta a pagar</td></tr>
+      <tr><td>Carga por setor</td><td>Aba <b>Carga por setor</b>: OPs, peças, metal em processo, atrasos e tempo médio por etapa e por responsável</td></tr>
+      <tr><td>Materiais recuperados</td><td>Campo "recuperado" em cada etapa, que volta para o <b>saldo de metal</b> da oficina</td></tr>
+      <tr><td>Composição de pedras e metais</td><td>Metal/teor, peso previsto, composição e custo das pedras na OP</td></tr>
+      <tr><td>Finalização integrada (estoque, baixa, etiqueta, custo)</td><td><b>Finalizar e dar entrada</b>: calcula o custo real (metal líquido + mão de obra + pedras), cadastra ou soma no estoque e abre a etiqueta. Se for pedido, reserva a peça e avisa a OS</td></tr>
+    </tbody></table></div>
+    <p class="small muted" style="margin-top:8px">Fonte: material público da Capta Tecnologia. O site capta.com.br não pôde ser aberto diretamente nesta pesquisa; a descrição vem de páginas indexadas e de terceiros.</p></div>
   <div class="grid g3" style="margin-top:14px">
     <div class="card"><h3>✅ O que copiamos dos melhores</h3><ul class="small">
       <li>Rastreamento de reparos ponta a ponta com status (Jewel360, The Edge)</li><li>Controle de memo/consignação (The Edge, Adaptive)</li><li>Histórico do cliente + datas especiais (CRM de joalheria)</li><li>Comissões por vendedor (Lightspeed, The Edge)</li><li>Etiquetas com código de barras para vitrine</li></ul></div>
@@ -984,6 +1002,8 @@ VIEWS.benchmark = () => {
     <li><a href="https://www.sourceforge.net/software/compare/Adaptive-Jewelry-ERP-vs-The-Edge-Jewelry" target="_blank" rel="noopener">SourceForge — Adaptive Jewelry ERP vs The Edge</a></li>
     <li><a href="https://www.getapp.com/retail-consumer-services-software/jewelry-store-management/f/for-jewelry-stores/" target="_blank" rel="noopener">GetApp — softwares para joalherias</a></li>
     <li><a href="https://www.capterra.pt/software/1034705/jewel360" target="_blank" rel="noopener">Capterra PT — Jewel360</a></li>
+    <li><a href="https://capta.com.br/sistema/pcp_/" target="_blank" rel="noopener">Capta Tecnologia — módulo PCP</a></li>
+    <li><a href="https://blog.vendeur.com.br/post/capta-tecnologia-integracao-vendas-gestao-joalherias" target="_blank" rel="noopener">Vendeur — Capta Tecnologia: integração de vendas e gestão para joalherias</a></li>
     <li><a href="https://www.mrpeasy.com/pt/industrias/joalheria" target="_blank" rel="noopener">MRPeasy — joalheria (rastreio por número de série)</a></li>
     <li><a href="https://www.dasolo.ai/pt/blog/odoo-por-industria-8/odoo-joalharias-gestao-stock-525" target="_blank" rel="noopener">Odoo para joalharias — gestão de stock</a></li>
     <li><a href="https://simplifique.contmatic.com.br/blogs/sistema-de-gestao-para-lojas" target="_blank" rel="noopener">Contmatic — requisitos de sistema de gestão para lojas</a></li>
@@ -1030,7 +1050,368 @@ function restaurar(){
   $('#bkF').onchange = e=>{ const f=e.target.files[0]; if(f) f.text().then(t=>$('#bkT').value=t); };
   $('#bkOk').onclick = ()=>{ try{ const d=JSON.parse($('#bkT').value); if(!d.produtos||!d.config) throw 0; db=d; save(); closeModal(); render(); toast('Backup restaurado'); }catch(e){ toast('Arquivo inválido'); } };
 }
-function zerar(){ const k={config:db.config,vendedores:db.vendedores,ourives:db.ourives}; db={...k,produtos:[],clientes:[],vendas:[],os:[],compras:[],consig:[],fin:[],movs:[],seq:{}}; save(); render(); toast('Sistema zerado'); }
+function zerar(){ const k={config:db.config,vendedores:db.vendedores,ourives:db.ourives}; db={...k,produtos:[],clientes:[],vendas:[],os:[],compras:[],consig:[],fin:[],movs:[],seq:{},producao:{etapas:(db.producao?.etapas||ETAPAS_PADRAO).map(e=>({...e})),terceiros:db.producao?.terceiros||[],ops:[],metal:[]}}; save(); render(); toast('Sistema zerado'); }
+
+/* ============================================================
+   PRODUÇÃO (PCP) — ordens de produção com controle por etapa
+   Inspirado no PCP de ERPs joalheiros (ex.: CAPTA): origem da OP,
+   etapas internas/terceiros, peso de entrada/saída, perdas,
+   recuperação de metal, carga por setor e finalização integrada.
+   ============================================================ */
+const ETAPAS_PADRAO = [
+  {nome:'Design / Modelagem (CAD/cera)', tol:0,   setor:'Modelagem'},
+  {nome:'Fundição',                      tol:3,   setor:'Fundição', fundicao:true},
+  {nome:'Montagem / Ourivesaria',        tol:1.5, setor:'Bancada'},
+  {nome:'Cravação',                      tol:0.5, setor:'Cravação'},
+  {nome:'Polimento / Acabamento',        tol:2,   setor:'Polimento'},
+  {nome:'Banho / Ródio',                 tol:0,   setor:'Galvanoplastia'},
+  {nome:'Controle de Qualidade',         tol:0,   setor:'Qualidade'},
+];
+const OP_ORIGENS = ['Pedido de cliente','Reposição de estoque','Estoque mínimo','Histórico de vendas','Mostruário / coleção'];
+const PRIORIDADES = ['Normal','Alta','Urgente'];
+
+function ensureProducao(){
+  if(db.producao) return;
+  db.producao = {etapas:ETAPAS_PADRAO.map(e=>({...e})), terceiros:['Fundição Paulista (terceiro)','Cravação Fina (terceiro)','Galvânica Brilho (terceiro)'], ops:[], metal:[]};
+  seedProducao();
+}
+const P_ = () => db.producao;
+const responsaveis = () => [...db.ourives, ...P_().terceiros];
+const isTerceiro = r => P_().terceiros.includes(r);
+const perdaG = e => (e.pesoEnt!==''&&e.pesoSai!==''&&e.pesoEnt!=null&&e.pesoSai!=null) ? (Number(e.pesoEnt)-Number(e.pesoSai)-(Number(e.recup)||0)) : 0;
+const perdaPct = e => Number(e.pesoEnt) ? perdaG(e)/Number(e.pesoEnt)*100 : 0;
+const opPesoAtual = op => { const d=op.etapas.filter(e=>e.done && Number(e.pesoSai)>0); return d.length ? Number(d[d.length-1].pesoSai) : Number(op.pesoPrevisto)||0; };
+const opEtapaNome = op => op.status==='Finalizada' ? 'Concluída' : op.status==='Cancelada' ? 'Cancelada' : op.atual>=op.etapas.length ? 'Finalização' : op.etapas[op.atual].nome;
+const opAtrasada = op => op.status==='Em produção' && op.prazo < today();
+const diasEntre = (a,b) => Math.max(0, Math.round((new Date(b)-new Date(a))/864e5));
+
+function metalMov(metal, peso, tipo, ref, data=today()){
+  P_().metal.push({id:uid(), data, metal, peso:Math.round(peso*1000)/1000, puro:Math.round(peso*(TEORES[metal]||0)*1000)/1000, tipo, ref});
+}
+function saldoMetal(){
+  const s={}; P_().metal.forEach(m=>{ s[m.metal]=(s[m.metal]||0)+m.peso; }); return s;
+}
+
+function newOP(o){
+  const etapas = P_().etapas.map(e=>({nome:e.nome,tol:e.tol,setor:e.setor,fundicao:!!e.fundicao,resp:'',tipo:'Interno',pesoEnt:'',pesoSai:'',recup:0,custo:0,ini:'',fim:'',obs:'',done:false}));
+  etapas[0].ini = o.data || today();
+  return {id:uid(), numero:nextNum('OP'), data:today(), status:'Em produção', atual:0, recuperado:0, osId:'', clienteId:'', qtd:1, prioridade:'Normal', custoPedras:0, ...o, etapas};
+}
+
+function seedProducao(){
+  const cli = n => db.clientes[n]?.id || '';
+  const prodBy = nome => db.produtos.find(p=>p.nome.startsWith(nome));
+  metalMov('Ouro 18k (750)', 180, 'Entrada (saldo inicial)', 'Abertura', addDays(-40));
+  metalMov('Ouro 24k (999)', 40, 'Entrada (saldo inicial)', 'Abertura', addDays(-40));
+  metalMov('Prata 925', 300, 'Entrada (saldo inicial)', 'Abertura', addDays(-40));
+  // helper: aplica etapas já concluídas
+  const run = (op, hist) => {
+    hist.forEach((h,i)=>{
+      const e = op.etapas[i]; Object.assign(e,{resp:h[0],tipo:isTerceiro(h[0])?'Terceiro':'Interno',pesoEnt:h[1],pesoSai:h[2],recup:h[3]||0,custo:h[4]||0,ini:addDays(-h[5]),fim:addDays(-h[6]),done:true});
+      if(e.fundicao) metalMov(op.metal, -h[1], 'Saída (fundição)', op.numero, e.fim);
+      if(e.recup) { metalMov(op.metal, e.recup, 'Retorno (recuperação limalha/canal)', op.numero, e.fim); op.recuperado += e.recup; }
+    });
+    op.atual = hist.length;
+    if(op.atual < op.etapas.length) op.etapas[op.atual].ini = addDays(-(hist.length?hist[hist.length-1][6]:0));
+  };
+  const I='Seu Antônio (interno)', O='Oficina Ouro Fino (terceiro)', F='Fundição Paulista (terceiro)', C='Cravação Fina (terceiro)', G='Galvânica Brilho (terceiro)';
+  if(!db.ourives.includes(O)) P_().terceiros.push(O); else { db.ourives = db.ourives.filter(x=>x!==O); P_().terceiros.push(O); }
+
+  const os2 = db.os.find(o=>o.tipo==='Sob encomenda');
+  let op;
+  op = newOP({data:addDays(-6),origem:'Pedido de cliente',clienteId:os2?.clienteId||cli(1),osId:os2?.id||'',descricao:'Anel noivado solitário 0,40ct — ouro branco, aro 15',categoria:'Anel',metal:'Ouro 18k (750)',qtd:1,pesoPrevisto:3.2,pedras:'Diamante 0,40ct (cliente escolheu G/VS1)',custoPedras:4200,prazo:addDays(12),prioridade:'Alta'});
+  run(op, [[I,0,0,0,180,6,5],[F,6.4,6.05,0.22,45,5,4],[I,6.05,3.6,2.3,220,4,2]]);
+  op.etapas[op.atual].resp=C; op.etapas[op.atual].tipo='Terceiro'; op.etapas[op.atual].pesoEnt=3.6;
+  P_().ops.push(op); if(os2) os2.opId = op.id;
+
+  const pb = prodBy('Brinco Argola Média');
+  op = newOP({data:addDays(-9),origem:'Estoque mínimo',produtoRef:pb?.codigo||'',descricao:'Brinco Argola Média (reposição)',categoria:'Brinco',metal:'Ouro 18k (750)',qtd:4,pesoPrevisto:13.6,pedras:'',custoPedras:0,prazo:addDays(2),prioridade:'Normal'});
+  run(op, [[I,0,0,0,0,9,9],[F,15.2,14.6,0.35,80,9,7],[O,14.6,14.1,0.3,320,7,5],[I,14.1,14.1,0,0,5,5]]);
+  op.etapas[op.atual].resp=I;
+  P_().ops.push(op);
+
+  const pa = prodBy('Anel Aparador');
+  op = newOP({data:addDays(-3),origem:'Reposição de estoque',produtoRef:pa?.codigo||'',descricao:'Anel Aparador Diamantes (reposição)',categoria:'Anel',metal:'Ouro 18k (750)',qtd:3,pesoPrevisto:6.6,pedras:'Diamantes 0,08ct por peça (24 pedras)',custoPedras:2400,prazo:addDays(-1),prioridade:'Urgente'});
+  run(op, [[I,0,0,0,150,3,2]]);
+  P_().ops.push(op);
+
+  op = newOP({data:addDays(-1),origem:'Histórico de vendas',descricao:'Aliança Tradicional 4mm (par) — coleção',categoria:'Aliança',metal:'Ouro 18k (750)',qtd:2,pesoPrevisto:16.4,pedras:'',custoPedras:0,prazo:addDays(15),prioridade:'Normal'});
+  P_().ops.push(op);
+
+  const pm = prodBy('Pingente Medalha');
+  op = newOP({data:addDays(-14),origem:'Reposição de estoque',produtoRef:pm?.codigo||'',descricao:'Pingente Medalha N. Sra. (reposição)',categoria:'Pingente',metal:'Ouro 18k (750)',qtd:5,pesoPrevisto:10,pedras:'',custoPedras:0,prazo:addDays(1),prioridade:'Normal'});
+  run(op, [[I,0,0,0,0,14,14],[F,11.2,10.8,0.25,60,13,12],[I,10.8,10.5,0.2,250,12,9],[I,10.5,10.5,0,0,9,9],[I,10.5,10.2,0.18,150,9,7],[G,10.2,10.2,0,90,7,4],[I,10.2,10.2,0,0,4,3]]);
+  P_().ops.push(op);
+
+  op = newOP({data:addDays(-30),origem:'Mostruário / coleção',descricao:'Pingente Coração Cravejado — lote',categoria:'Pingente',metal:'Ouro 18k (750)',qtd:2,pesoPrevisto:3.2,pedras:'Diamantes 0,10ct total',custoPedras:900,prazo:addDays(-15),prioridade:'Normal'});
+  run(op, [[I,0,0,0,120,30,29],[F,3.9,3.62,0.12,40,29,28],[I,3.62,3.4,0.15,200,28,25],[C,3.4,3.38,0,260,25,22],[I,3.38,3.25,0.08,90,22,21],[G,3.25,3.25,0,60,21,19],[I,3.25,3.25,0,0,19,18]]);
+  op.status='Finalizada'; op.finalizada=addDays(-18); op.pesoFinal=3.25; op.custoTotal=2700;
+  P_().ops.push(op);
+}
+
+/* ---------- View ---------- */
+let prodTab = 'quadro';
+VIEWS.producao = () => {
+  ensureProducao();
+  actions(`<button class="btn" onclick="sugestoesOP()">💡 Sugestões de produção</button><button class="btn pri" onclick="editOP()">+ Nova ordem de produção</button>`);
+  const ops = P_().ops, ativas = ops.filter(o=>o.status==='Em produção');
+  const emTerc = ativas.filter(o=>o.atual<o.etapas.length && o.etapas[o.atual].resp && isTerceiro(o.etapas[o.atual].resp)).length;
+  const perdasMes = ops.flatMap(o=>o.etapas.filter(e=>e.done && e.fim && monthKey(e.fim)===today().slice(0,7)).map(e=>({e,o})));
+  const perdaMesG = perdasMes.reduce((s,x)=>s+perdaG(x.e),0);
+  const perdaMesR = perdasMes.reduce((s,x)=>s+metalGramValue(x.o.metal, perdaG(x.e)),0);
+  const sm = saldoMetal();
+  const tabs = [['quadro','Quadro por etapa'],['ordens','Ordens de produção'],['carga','Carga por setor'],['metal','Metal e perdas'],['etapas','Configurar etapas']];
+  $('#view').innerHTML = `
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">OPs em produção</div><div class="val">${ativas.length}</div><div class="sub">${ativas.filter(opAtrasada).length} atrasada(s) · ${emTerc} em terceiros</div></div>
+    <div class="card kpi"><div class="lbl">Peças em processo</div><div class="val">${ativas.reduce((s,o)=>s+Number(o.qtd),0)}</div><div class="sub">${num(ativas.reduce((s,o)=>s+opPesoAtual(o),0),2)} g de metal na oficina</div></div>
+    <div class="card kpi"><div class="lbl">Perda de metal no mês</div><div class="val">${num(perdaMesG,2)} g</div><div class="sub">≈ ${brl(perdaMesR)} em metal</div></div>
+    <div class="card kpi"><div class="lbl">Saldo ouro 18k em estoque</div><div class="val">${num(sm['Ouro 18k (750)']||0,2)} g</div><div class="sub">${num((sm['Ouro 18k (750)']||0)*.75,2)} g puros · recuperado ${num(ops.reduce((s,o)=>s+(o.recuperado||0),0),2)} g</div></div>
+  </div>
+  <div class="toolbar">${tabs.map(([k,l])=>`<button class="btn sm ${k===prodTab?'pri':''}" onclick="prodTab='${k}';render()">${l}</button>`).join('')}</div>
+  <div id="prodBody"></div>`;
+  ({quadro:prodQuadro, ordens:prodOrdens, carga:prodCarga, metal:prodMetal, etapas:prodEtapas})[prodTab]();
+};
+
+function opCard(o){
+  const e = o.etapas[o.atual]; const late = opAtrasada(o);
+  const terc = e && e.resp && isTerceiro(e.resp);
+  return `<div class="os" onclick="fichaOP('${o.id}')">
+    <div class="n">${o.numero} · ${esc(o.origem)}${o.prioridade!=='Normal'?` · <b style="color:${o.prioridade==='Urgente'?'var(--bad)':'var(--warn)'}">${o.prioridade}</b>`:''}</div>
+    <div class="t">${esc(o.descricao)}</div>
+    <div class="small muted">${o.qtd}× · ${esc(o.metal)}${o.clienteId?` · ${esc(cliName(o.clienteId))}`:''}</div>
+    <div class="row small" style="margin-top:6px;justify-content:space-between"><span class="tag ${late?'t-bad':'t-gold'}" style="flex:0 0 auto">${late?'Atrasada ':'Prazo '}${fmtD(o.prazo)}</span><b style="flex:0 0 auto">${num(opPesoAtual(o),2)} g</b></div>
+    ${terc?`<div style="margin-top:6px"><span class="tag t-info">📦 em ${esc(e.resp)}</span></div>`:''}
+    ${e && !e.resp && o.status==='Em produção'?`<div style="margin-top:6px"><span class="tag t-warn">sem responsável</span></div>`:''}
+    ${e && e.resp && !terc?`<div class="small muted" style="margin-top:6px">👤 ${esc(e.resp)}</div>`:''}
+    ${o.status==='Em produção'?`<div class="row" style="margin-top:8px;gap:6px" onclick="event.stopPropagation()">${e?`<button class="btn sm" style="flex:0 0 auto" title="Atribuir / enviar" onclick="atribuirOP('${o.id}')">👤</button>`:''}<button class="btn sm" onclick="${o.atual>=o.etapas.length?`finalizarOP('${o.id}')`:`avancarOP('${o.id}')`}">${o.atual>=o.etapas.length?'Finalizar e dar entrada ✓':'Concluir etapa ▶'}</button></div>`:''}
+  </div>`;
+}
+function prodQuadro(){
+  const ativas = P_().ops.filter(o=>o.status==='Em produção');
+  const cols = P_().etapas.map((et,i)=>({nome:et.nome, its:ativas.filter(o=>o.atual===i)}));
+  cols.push({nome:'Finalização (entrada no estoque)', its:ativas.filter(o=>o.atual>=o.etapas.length)});
+  cols.push({nome:'Concluídas (últimas)', its:P_().ops.filter(o=>o.status==='Finalizada').slice(-4).reverse()});
+  $('#prodBody').innerHTML = `<div class="kanban" style="grid-template-columns:repeat(${cols.length},240px)">${cols.map(c=>`<div class="col"><h3><span>${esc(c.nome)}</span><span class="tag t-mute">${c.its.length}</span></h3>${c.its.map(opCard).join('')||'<div class="small muted" style="padding:8px">Vazio</div>'}</div>`).join('')}</div>
+  <p class="small muted" style="margin-top:10px">Role para o lado para ver todas as etapas. Em cada etapa você registra quem fez (interno ou terceiro), o peso de entrada e de saída, o metal recuperado e o custo. A perda é calculada sozinha e gera alerta quando passa da tolerância.</p>`;
+}
+function prodOrdens(){
+  const list = P_().ops.slice().reverse();
+  $('#prodBody').innerHTML = table([
+    {h:'OP',f:o=>`<b>${o.numero}</b><br><span class="small muted">${fmtD(o.data)}</span>`},
+    {h:'Peça',f:o=>`${esc(o.descricao)}<br><span class="small muted">${o.qtd}× · ${esc(o.metal)}</span>`},
+    {h:'Origem',f:o=>`${esc(o.origem)}${o.clienteId?`<br><span class="small muted">${esc(cliName(o.clienteId))}</span>`:''}${o.produtoRef?`<br><span class="small muted">ref. ${esc(o.produtoRef)}</span>`:''}`},
+    {h:'Etapa atual',f:o=>`<span class="tag ${o.status==='Finalizada'?'t-ok':o.status==='Cancelada'?'t-mute':'t-info'}">${esc(opEtapaNome(o))}</span><br><span class="small muted">${o.etapas.filter(e=>e.done).length}/${o.etapas.length} etapas</span>`},
+    {h:'Prazo',f:o=>`<span class="${opAtrasada(o)?'tag t-bad':''}">${fmtD(o.prazo)}</span>`},
+    {h:'Perda',num:1,f:o=>{const g=o.etapas.reduce((s,e)=>s+(e.done?perdaG(e):0),0); return `${num(g,2)} g`;}},
+    {h:'',f:o=>`<button class="btn sm" onclick="fichaOP('${o.id}')">Ficha</button>`}
+  ], list, 'Nenhuma ordem de produção.');
+}
+function prodCarga(){
+  const ativas = P_().ops.filter(o=>o.status==='Em produção');
+  const rows = P_().etapas.map((et,i)=>{
+    const its = ativas.filter(o=>o.atual===i);
+    const feitas = P_().ops.flatMap(o=>o.etapas.filter(e=>e.done && e.nome===et.nome && e.ini && e.fim));
+    const lead = feitas.length ? feitas.reduce((s,e)=>s+diasEntre(e.ini,e.fim),0)/feitas.length : 0;
+    return {et, n:its.length, pecas:its.reduce((s,o)=>s+Number(o.qtd),0), peso:its.reduce((s,o)=>s+opPesoAtual(o),0), late:its.filter(opAtrasada).length, terc:its.filter(o=>o.etapas[i].resp&&isTerceiro(o.etapas[i].resp)).length, lead};
+  });
+  const max = Math.max(1,...rows.map(r=>r.pecas));
+  // carga por responsável
+  const byR = {}; ativas.forEach(o=>{ const e=o.etapas[o.atual]; if(e){ const r=e.resp||'(não atribuído)'; byR[r]=byR[r]||{n:0,pecas:0}; byR[r].n++; byR[r].pecas+=Number(o.qtd);} });
+  $('#prodBody').innerHTML = `<div class="grid" style="grid-template-columns:2fr 1fr">
+    <div>${table([
+      {h:'Setor / etapa',f:r=>`<b>${esc(r.et.nome)}</b><br><span class="small muted">${esc(r.et.setor||'')}</span>`},
+      {h:'Carga',f:r=>`<div style="background:#efe9dc;border-radius:4px;height:10px;width:140px"><div style="background:#b8892b;height:10px;border-radius:4px;width:${r.pecas/max*140}px"></div></div>`},
+      {h:'OPs',num:1,f:r=>r.n},{h:'Peças',num:1,f:r=>r.pecas},{h:'Metal',num:1,f:r=>num(r.peso,2)+' g'},
+      {h:'Em terceiros',num:1,f:r=>r.terc||'—'},{h:'Atrasadas',num:1,f:r=>r.late?`<span class="tag t-bad">${r.late}</span>`:'—'},
+      {h:'Tempo médio',num:1,f:r=>r.lead?num(r.lead,1)+' dia(s)':'—'}
+    ], rows)}</div>
+    <div class="card"><h2>Carga por responsável</h2><ul class="list">${Object.entries(byR).sort((a,b)=>b[1].pecas-a[1].pecas).map(([r,v])=>`<li><span>${esc(r)}${isTerceiro(r)?' <span class="tag t-info">terceiro</span>':''}</span><b>${v.n} OP · ${v.pecas} pç</b></li>`).join('')||'<li class="muted">Sem carga</li>'}</ul>
+    <p class="small muted" style="margin-top:10px">O tempo médio usa as etapas já concluídas e ajuda a prometer prazos realistas ao cliente.</p></div>
+  </div>`;
+}
+function prodMetal(){
+  const sm = saldoMetal();
+  const done = P_().ops.flatMap(o=>o.etapas.filter(e=>e.done && Number(e.pesoEnt)).map(e=>({e,o})));
+  const agg = key => { const m={}; done.forEach(({e,o})=>{ const k=key(e); m[k]=m[k]||{ent:0,perda:0,valor:0,recup:0,tol:e.tol,alert:0}; m[k].ent+=Number(e.pesoEnt); m[k].perda+=perdaG(e); m[k].recup+=Number(e.recup)||0; m[k].valor+=metalGramValue(o.metal,perdaG(e)); if(perdaPct(e)>e.tol) m[k].alert++; }); return Object.entries(m); };
+  const pcols = (h) => [{h,f:r=>esc(r[0])},{h:'Peso trabalhado',num:1,f:r=>num(r[1].ent,2)+' g'},{h:'Recuperado',num:1,f:r=>num(r[1].recup,2)+' g'},{h:'Perda',num:1,f:r=>num(r[1].perda,2)+' g'},{h:'Perda %',num:1,f:r=>`<span class="tag ${r[1].alert?'t-bad':'t-ok'}">${num(r[1].ent?r[1].perda/r[1].ent*100:0,2)}%</span>`},{h:'Valor perdido',num:1,f:r=>brl(r[1].valor)}];
+  $('#prodBody').innerHTML = `<div class="grid g2">
+    <div class="card"><h2>Saldo de metal (conta-corrente da oficina)</h2>
+      ${table([{h:'Metal',f:r=>esc(r[0])},{h:'Saldo (liga)',num:1,f:r=>num(r[1],2)+' g'},{h:'Puro',num:1,f:r=>num(r[1]*(TEORES[r[0]]||0),2)+' g'},{h:'Valor',num:1,f:r=>brl(metalGramValue(r[0],r[1]))}], Object.entries(sm))}
+      <div class="row" style="margin-top:10px;justify-content:flex-start"><button class="btn" style="flex:0 0 auto" onclick="movMetal()">+ Lançar movimento de metal</button></div>
+      <p class="small muted" style="margin-top:8px">Entradas: compra de metal, compra de ouro usado (destino fundição/oficina) e recuperação de limalha. Saídas: fundição das OPs.</p></div>
+    <div class="card"><h2>Movimentações de metal</h2><div style="max-height:320px;overflow:auto">${table([{h:'Data',f:m=>fmtD(m.data)},{h:'Tipo',f:m=>esc(m.tipo)},{h:'Metal',f:m=>esc(m.metal)},{h:'Peso',num:1,f:m=>`<b style="color:${m.peso<0?'var(--bad)':'var(--ok)'}">${m.peso>0?'+':''}${num(m.peso,2)} g</b>`},{h:'Ref.',f:m=>esc(m.ref||'')}], P_().metal.slice().reverse().slice(0,40))}</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Perdas por etapa</h2>${table(pcols('Etapa'), agg(e=>e.nome))}
+    <p class="small muted" style="margin-top:8px">Vermelho = ao menos uma OP passou da tolerância daquela etapa (veja em Configurar etapas).</p></div>
+  <div class="card" style="margin-top:14px"><h2>Perdas por responsável (ourives e terceiros)</h2>${table(pcols('Responsável'), agg(e=>e.resp||'(sem responsável)'))}</div>`;
+}
+function prodEtapas(){
+  $('#prodBody').innerHTML = `<div class="grid g2">
+    <div class="card"><h2>Etapas do roteiro de produção</h2>
+      ${table([{h:'#',f:e=>P_().etapas.indexOf(e)+1},{h:'Etapa',f:e=>`${esc(e.nome)}${e.fundicao?' <span class="tag t-gold">baixa metal</span>':''}`},{h:'Setor',f:e=>esc(e.setor||'')},{h:'Tolerância de perda',num:1,f:e=>num(e.tol,1)+'%'},{h:'',f:e=>{const i=P_().etapas.indexOf(e); return `<button class="btn sm" onclick="editEtapa(${i})">Editar</button> ${i>0?`<button class="btn sm ghost" onclick="moveEtapa(${i},-1)">▲</button>`:''}`;}}], P_().etapas)}
+      <button class="btn" style="margin-top:10px" onclick="editEtapa()">+ Etapa</button>
+      <p class="small muted" style="margin-top:8px">Mudanças valem para novas OPs. As OPs em andamento mantêm o roteiro com que foram abertas.</p></div>
+    <div class="card"><h2>Prestadores de serviço (terceiros)</h2><ul class="list">${P_().terceiros.map((t,i)=>`<li>${esc(t)}<button class="btn sm ghost" onclick="P_().terceiros.splice(${i},1);save();render()">remover</button></li>`).join('')}</ul>
+      <div class="row" style="margin-top:6px"><input id="novoTerc" class="search" placeholder="Novo prestador"><button class="btn" style="flex:0 0 auto" onclick="if($('#novoTerc').value.trim()){P_().terceiros.push($('#novoTerc').value.trim());save();render();}">Adicionar</button></div>
+      <p class="small muted" style="margin-top:8px">Os ourives internos ficam em Configurações.</p></div>
+  </div>`;
+}
+function editEtapa(i){
+  const e = i!=null ? P_().etapas[i] : {tol:1};
+  openForm(i!=null?'Editar etapa':'Nova etapa', [{k:'nome',label:'Nome da etapa',req:true,full:true},{k:'setor',label:'Setor'},{k:'tol',label:'Tolerância de perda (%)',type:'number',step:'0.1'},{k:'fundicao',label:'Esta etapa consome metal do estoque (fundição)',type:'checkbox',full:true}], e,
+    o=>{ if(i!=null) Object.assign(e,o); else P_().etapas.push(o); toast('Etapa salva'); },
+    i!=null?`<button class="btn danger" style="margin-right:auto" onclick="ask('Remover esta etapa do roteiro?',()=>{P_().etapas.splice(${i},1);save();render();})">Remover</button>`:'');
+}
+function moveEtapa(i,d){ const a=P_().etapas; [a[i],a[i+d]]=[a[i+d],a[i]]; save(); render(); }
+
+/* ---------- Ações ---------- */
+function editOP(preset={}){
+  ensureProducao();
+  const o = {origem:'Reposição de estoque',metal:'Ouro 18k (750)',categoria:'Anel',qtd:1,prioridade:'Normal',prazo:addDays(15),custoPedras:0,...preset};
+  openForm('Nova ordem de produção', [
+    {k:'origem',label:'Origem da OP',type:'select',options:OP_ORIGENS},
+    {k:'prioridade',label:'Prioridade',type:'select',options:PRIORIDADES},
+    {k:'descricao',label:'Peça a produzir',req:true,full:true},
+    {k:'clienteId',label:'Cliente (se for pedido)',type:'select',options:cliOpts()},
+    {k:'produtoRef',label:'Código de referência (modelo)'},
+    {k:'categoria',label:'Categoria',type:'select',options:CATEGORIAS},
+    {k:'metal',label:'Metal / teor',type:'select',options:Object.keys(TEORES)},
+    {k:'qtd',label:'Quantidade de peças',type:'number',req:true},
+    {k:'pesoPrevisto',label:'Peso final previsto (g, total)',type:'number',step:'0.01'},
+    {k:'pedras',label:'Composição de pedras',full:true,ph:'Ex.: 1 diamante 0,40ct G/VS1 + 12 brilhantes 0,01ct'},
+    {k:'custoPedras',label:'Custo das pedras (R$)',type:'number',step:'0.01'},
+    {k:'prazo',label:'Prazo',type:'date',req:true},
+  ], o, v=>{
+    v.qtd=Number(v.qtd)||1; v.custoPedras=Number(v.custoPedras)||0;
+    const op = newOP({...v, osId:preset.osId||''}); P_().ops.push(op);
+    if(op.osId){ const os=db.os.find(x=>x.id===op.osId); if(os){ os.opId=op.id; os.status='Em produção'; } }
+    toast(`OP ${op.numero} aberta`);
+  });
+}
+function opFromOS(id){
+  const os = db.os.find(x=>x.id===id); closeModal();
+  if(os.opId){ toast('Esta OS já tem OP'); return; }
+  editOP({origem:'Pedido de cliente',clienteId:os.clienteId,descricao:os.descricao,prazo:addDays(-2,new Date(os.prazo+'T12:00')),prioridade:'Alta',osId:os.id});
+}
+function avancarOP(id){
+  const op = P_().ops.find(x=>x.id===id); const i = op.atual; const e = op.etapas[i];
+  const prev = op.etapas.slice(0,i).filter(x=>x.done && x.pesoSai!=='').pop();
+  const ent = e.pesoEnt!=='' ? e.pesoEnt : prev ? prev.pesoSai : '';
+  openForm(`${op.numero} — concluir "${e.nome}"`, [
+    {k:'resp',label:'Responsável (interno ou terceiro)',type:'select',options:responsaveis(),full:true},
+    {k:'pesoEnt',label:e.fundicao?'Metal enviado para fundir (g)':'Peso de entrada (g)',type:'number',step:'0.01'},
+    {k:'pesoSai',label:'Peso de saída (g)',type:'number',step:'0.01'},
+    {k:'recup',label:'Metal recuperado (limalha, canais, sobras) (g)',type:'number',step:'0.01'},
+    {k:'custo',label:'Custo da etapa / mão de obra (R$)',type:'number',step:'0.01'},
+    {k:'obs',label:'Observações',type:'textarea',full:true},
+  ], {...e, pesoEnt:ent, pesoSai:e.pesoSai!==''?e.pesoSai:ent, resp:e.resp||db.ourives[0]}, v=>{
+    Object.assign(e, v, {done:true, fim:today(), tipo:isTerceiro(v.resp)?'Terceiro':'Interno', recup:Number(v.recup)||0, custo:Number(v.custo)||0});
+    if(!e.ini) e.ini = today();
+    if(e.fundicao && Number(e.pesoEnt)){
+      const saldo = saldoMetal()[op.metal]||0;
+      metalMov(op.metal, -Number(e.pesoEnt), 'Saída (fundição)', op.numero);
+      if(saldo < Number(e.pesoEnt)) setTimeout(()=>toast('Atenção: saldo de '+op.metal+' ficou negativo'),300);
+    }
+    if(e.recup){ metalMov(op.metal, e.recup, 'Retorno (recuperação limalha/canal)', op.numero); op.recuperado=(op.recuperado||0)+e.recup; }
+    if(e.tipo==='Terceiro' && e.custo>0) db.fin.push({id:uid(),data:today(),venc:addDays(15),tipo:'Saída',categoria:'Fornecedores',descricao:`Serviço ${e.nome} — ${e.resp} (${op.numero})`,valor:e.custo,pago:false});
+    op.atual = i+1; if(op.atual<op.etapas.length) op.etapas[op.atual].ini = today();
+    const pp = perdaPct(e);
+    setTimeout(()=>toast(pp>e.tol ? `⚠ Perda de ${num(pp,2)}% acima da tolerância (${num(e.tol,1)}%)` : `Etapa concluída · perda ${num(perdaG(e),2)} g (${num(pp,2)}%)`), 50);
+  });
+  $('#mBody').insertAdjacentHTML('beforeend', `<p class="small muted" style="margin-top:10px">Tolerância desta etapa: <b>${num(e.tol,1)}%</b>. Perda = entrada − saída − recuperado.${e.fundicao?' O metal enviado sai do saldo de metal da oficina.':''}</p>`);
+}
+function atribuirOP(id){
+  const op = P_().ops.find(x=>x.id===id); const e = op.etapas[op.atual];
+  openForm(`${op.numero} — atribuir "${e.nome}"`, [
+    {k:'resp',label:'Responsável / prestador',type:'select',options:responsaveis(),full:true},
+    {k:'pesoEnt',label:'Peso enviado / entregue (g)',type:'number',step:'0.01'},
+    {k:'obs',label:'Instruções',type:'textarea',full:true},
+  ], {...e, resp:e.resp||db.ourives[0], pesoEnt:e.pesoEnt!==''?e.pesoEnt:opPesoAtual(op)||''}, v=>{
+    Object.assign(e, v, {tipo:isTerceiro(v.resp)?'Terceiro':'Interno', ini:today()});
+    toast(isTerceiro(v.resp)?`Peça enviada para ${v.resp} — romaneio registrado`:`Atribuída a ${v.resp}`);
+  });
+  $('#mBody').insertAdjacentHTML('beforeend','<p class="small muted" style="margin-top:10px">Use ao entregar a peça ao ourives ou ao enviar para um prestador. O peso enviado fica registrado e é conferido no retorno.</p>');
+}
+function custoOP(op){
+  const fund = op.etapas.find(e=>e.fundicao && e.done);
+  const metalG = fund ? Number(fund.pesoEnt) - (op.recuperado||0) : opPesoAtual(op);
+  const metal = metalGramValue(op.metal, metalG);
+  const mao = op.etapas.reduce((s,e)=>s+(Number(e.custo)||0),0);
+  return {metalG, metal, mao, pedras:Number(op.custoPedras)||0, total: metal+mao+(Number(op.custoPedras)||0)};
+}
+function finalizarOP(id){
+  const op = P_().ops.find(x=>x.id===id); const c = custoOP(op);
+  const unit = c.total/op.qtd; const ref = db.produtos.find(p=>p.codigo===op.produtoRef);
+  openModal(`Finalizar ${op.numero}`, `<table class="breakdown">
+      <tr><td>Metal consumido (${num(c.metalG,2)} g líquidos)</td><td class="num">${brl(c.metal)}</td></tr>
+      <tr><td>Mão de obra / serviços (todas as etapas)</td><td class="num">${brl(c.mao)}</td></tr>
+      <tr><td>Pedras</td><td class="num">${brl(c.pedras)}</td></tr>
+      <tr><td><b>Custo total</b> (${op.qtd} pç)</td><td class="num"><b>${brl(c.total)}</b></td></tr>
+      <tr><td>Custo unitário</td><td class="num">${brl(unit)}</td></tr></table>
+    <form class="form" style="margin-top:14px" onsubmit="return false">
+      <div><label>Peso final total (g)</label><input id="fpPeso" type="number" step="0.01" value="${opPesoAtual(op)}"></div>
+      <div><label>Preço de venda unitário (R$)</label><input id="fpPreco" type="number" step="0.01" value="${ref?ref.preco:Math.ceil(unit*db.config.markup/10)*10}"></div>
+      <div class="full"><label>${ref?`Dar entrada no item existente ${esc(ref.codigo)} — ${esc(ref.nome)}`:'Será cadastrado como nova peça no estoque'}</label></div>
+    </form>
+    ${op.osId?'<p class="small" style="margin-top:8px">🔗 Esta OP é de um <b>pedido de cliente</b>: a peça entra como <b>Reservada</b> e a OS vai para "Pronto p/ retirada".</p>':''}`,
+    `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn pri" id="fpOk">Finalizar e dar entrada</button>`);
+  $('#fpOk').onclick = ()=>{
+    const peso = +$('#fpPeso').value||0, preco = +$('#fpPreco').value||0;
+    let p;
+    if(ref){ p=ref; const q0=Number(p.qtd)||0; p.custo = Math.round(((p.custo*q0)+(unit*op.qtd))/(q0+op.qtd)*100)/100; p.qtd = q0+op.qtd; p.preco = preco; }
+    else { p = {id:uid(),codigo:'JG'+(1001+db.produtos.length),nome:op.descricao,categoria:op.categoria,metal:op.metal,peso:Math.round(peso/op.qtd*100)/100,pedras:op.pedras||'',custo:Math.round(unit*100)/100,preco,qtd:op.qtd,min:1,fornecedor:'Produção própria',local:op.osId?'Cofre':'Vitrine',status:op.osId?'Reservado':'Disponível',criado:today()}; db.produtos.push(p); }
+    db.movs.push({id:uid(),data:today(),produtoId:p.id,tipo:'Entrada (produção)',qtd:op.qtd,ref:op.numero});
+    op.status='Finalizada'; op.finalizada=today(); op.pesoFinal=peso; op.custoTotal=c.total; op.produtoId=p.id;
+    if(op.osId){ const os=db.os.find(x=>x.id===op.osId); if(os) os.status='Pronto p/ retirada'; }
+    save(); closeModal(); render(); toast(`${op.numero} finalizada — ${op.qtd} pç no estoque`);
+    setTimeout(()=>etiqueta(p.id), 400);
+  };
+}
+function fichaOP(id){
+  const op = P_().ops.find(x=>x.id===id); const c = custoOP(op);
+  const os = op.osId ? db.os.find(x=>x.id===op.osId) : null;
+  openModal(`${op.numero} — ${op.descricao}`, `
+    <div class="grid g3" style="margin-bottom:12px">
+      <div><div class="small muted">Origem</div><b>${esc(op.origem)}</b>${os?`<br><span class="small">OS ${os.numero} · ${esc(cliName(os.clienteId))}</span>`:op.clienteId?`<br><span class="small">${esc(cliName(op.clienteId))}</span>`:''}</div>
+      <div><div class="small muted">Peças / metal</div><b>${op.qtd}× · ${esc(op.metal)}</b><br><span class="small">previsto ${num(op.pesoPrevisto,2)} g</span></div>
+      <div><div class="small muted">Situação</div><span class="tag ${op.status==='Finalizada'?'t-ok':'t-info'}">${esc(opEtapaNome(op))}</span><br><span class="small">prazo ${fmtD(op.prazo)} · ${op.prioridade}</span></div>
+    </div>
+    ${op.pedras?`<p class="small"><span class="muted">Pedras:</span> ${esc(op.pedras)}</p>`:''}
+    <div class="tbl-wrap"><table><thead><tr><th>Etapa</th><th>Responsável</th><th>Datas</th><th class="num">Entrada</th><th class="num">Saída</th><th class="num">Recup.</th><th class="num">Perda</th><th class="num">Custo</th></tr></thead><tbody>
+    ${op.etapas.map((e,i)=>{ const pp=perdaPct(e); const cur = i===op.atual && op.status==='Em produção';
+      return `<tr style="${cur?'background:#fbf5e6':''}"><td>${e.done?'✅':cur?'▶':'○'} ${esc(e.nome)}</td><td>${esc(e.resp||'—')}${e.tipo==='Terceiro'?' <span class="tag t-info">terc.</span>':''}</td><td class="small">${e.ini?fmtD(e.ini).slice(0,5):''}${e.fim?' → '+fmtD(e.fim).slice(0,5):''}</td>
+      <td class="num">${e.pesoEnt!==''?num(e.pesoEnt,2):'—'}</td><td class="num">${e.pesoSai!==''?num(e.pesoSai,2):'—'}</td><td class="num">${e.recup?num(e.recup,2):'—'}</td>
+      <td class="num">${e.done&&Number(e.pesoEnt)?`<span class="tag ${pp>e.tol?'t-bad':'t-ok'}">${num(perdaG(e),2)} g · ${num(pp,1)}%</span>`:'—'}</td><td class="num">${e.custo?brl(e.custo):'—'}</td></tr>`;}).join('')}
+    </tbody></table></div>
+    <table class="breakdown" style="margin-top:12px"><tr><td>Metal líquido consumido</td><td class="num">${num(c.metalG,2)} g · ${brl(c.metal)}</td></tr><tr><td>Mão de obra / serviços</td><td class="num">${brl(c.mao)}</td></tr><tr><td>Pedras</td><td class="num">${brl(c.pedras)}</td></tr><tr><td><b>Custo ${op.status==='Finalizada'?'final':'até agora'}</b></td><td class="num"><b>${brl(c.total)}</b> · ${brl(c.total/op.qtd)}/pç</td></tr></table>`,
+    `${op.status==='Em produção'?`<button class="btn danger" style="margin-right:auto" onclick="ask('Cancelar ${op.numero}?',()=>{const o=P_().ops.find(x=>x.id==='${op.id}');o.status='Cancelada';save();render();})">Cancelar OP</button>`:''}
+     <button class="btn" onclick="closeModal()">Fechar</button>
+     ${op.status==='Em produção'&&op.atual<op.etapas.length?`<button class="btn" onclick="closeModal();atribuirOP('${op.id}')">Atribuir / enviar a terceiro</button>`:''}
+     ${op.status==='Em produção'?(op.atual>=op.etapas.length?`<button class="btn pri" onclick="closeModal();finalizarOP('${op.id}')">Finalizar e dar entrada</button>`:`<button class="btn pri" onclick="closeModal();avancarOP('${op.id}')">Concluir etapa atual</button>`):''}`);
+}
+function sugestoesOP(){
+  ensureProducao();
+  const emOP = new Set(P_().ops.filter(o=>o.status==='Em produção').map(o=>o.produtoRef).filter(Boolean));
+  const baixo = db.produtos.filter(p=>Number(p.qtd)<=Number(p.min||0) && !emOP.has(p.codigo) && p.fornecedor!=='Distribuidora Tempo');
+  const lim = addDays(-90); const vend={}; db.vendas.filter(v=>v.data>=lim).forEach(v=>v.itens.forEach(i=>{vend[i.produtoId]=(vend[i.produtoId]||0)+i.qtd;}));
+  const giro = db.produtos.filter(p=>vend[p.id]>=2 && Number(p.qtd)<=2 && !emOP.has(p.codigo) && !baixo.includes(p)).sort((a,b)=>vend[b.id]-vend[a.id]);
+  const pedidos = db.os.filter(o=>o.tipo==='Sob encomenda' && !o.opId && o.status!=='Entregue');
+  const line = (p, origem, extra) => `<li><span><b>${p.codigo}</b> ${esc(p.nome)}<br><span class="small muted">${extra}</span></span><button class="btn sm" onclick='closeModal();editOP(${JSON.stringify({origem,produtoRef:p.codigo,descricao:p.nome+" (reposição)",categoria:p.categoria,metal:p.metal,qtd:Math.max(2,(p.min||1)*2-p.qtd),pesoPrevisto:Math.round(p.peso*Math.max(2,(p.min||1)*2-p.qtd)*100)/100,pedras:p.pedras})})'>Gerar OP</button></li>`;
+  openModal('Sugestões de produção', `
+    <h3>📋 Pedidos de clientes sem OP</h3><ul class="list">${pedidos.map(o=>`<li><span><b>${o.numero}</b> ${esc(cliName(o.clienteId))}<br><span class="small muted">${esc(o.descricao)}</span></span><button class="btn sm" onclick="opFromOS('${o.id}')">Gerar OP</button></li>`).join('')||'<li class="muted">Nenhum</li>'}</ul>
+    <h3 style="margin-top:14px">📉 Abaixo do estoque mínimo</h3><ul class="list">${baixo.map(p=>line(p,'Estoque mínimo',`estoque ${p.qtd} · mínimo ${p.min}`)).join('')||'<li class="muted">Nenhum</li>'}</ul>
+    <h3 style="margin-top:14px">🔥 Alto giro (histórico de vendas 90 dias)</h3><ul class="list">${giro.map(p=>line(p,'Histórico de vendas',`${vend[p.id]} vendidas em 90 dias · estoque ${p.qtd}`)).join('')||'<li class="muted">Nenhum</li>'}</ul>`,
+    `<button class="btn pri" onclick="closeModal()">Fechar</button>`);
+}
+function movMetal(){
+  openForm('Movimento de metal', [
+    {k:'metal',label:'Metal',type:'select',options:Object.keys(TEORES).filter(k=>!k.startsWith('Aço'))},
+    {k:'tipo',label:'Tipo',type:'select',options:['Entrada (compra de metal)','Entrada (recuperação / refino)','Saída (envio para refino)','Ajuste de inventário']},
+    {k:'peso',label:'Peso (g) — use negativo para ajuste de saída',type:'number',step:'0.01',req:true},
+    {k:'ref',label:'Referência / NF',full:true}
+  ], {metal:'Ouro 18k (750)'}, v=>{ let p=Number(v.peso); if(v.tipo.startsWith('Saída')) p=-Math.abs(p); metalMov(v.metal,p,v.tipo,v.ref); toast('Movimento lançado'); });
+}
 
 /* ---------------- Start ---------------- */
 db = load();

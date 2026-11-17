@@ -10,6 +10,7 @@ Ele já vem com dados de demonstração. Tudo o que você cadastrar fica salvo n
 | Ponto de Venda | Venda por clique ou código de barras, desconto, parcelas, abatimento de ouro, comissão, recibo |
 | Estoque | Peças com código, metal/teor, peso, pedras, custo, preço, mínimo, local, movimentações e etiqueta |
 | Ordens de Serviço | Kanban de consertos/encomendas (Recebido → Em produção → Pronto → Entregue), sinal e saldo |
+| Produção (PCP) | Ordens de produção com roteiro por etapa (design, fundição, montagem, cravação, polimento, banho, qualidade). Em cada etapa registra o responsável (interno ou terceiro), o peso de entrada e de saída e o metal recuperado; a perda é calculada e gera alerta quando passa da tolerância. Inclui carga por setor, conta-corrente de metal e finalização integrada com estoque, custo e etiqueta. Modelo inspirado no PCP do CAPTA ERP |
 | Compra de Ouro | Cálculo por peso × teor × cotação × % pago, com CPF e destino da peça |
 | Consignação / Malinha | Saída de peças para clientes/representantes e acerto (vendido/devolvido) |
 | Clientes (CRM) | Aro, aniversário, datas especiais, preferências, histórico de compras e serviços |
